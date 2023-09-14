@@ -75,7 +75,8 @@
 			"foxundermoon.shell-format",
 			"aaron-bond.better-comments",
 			"timonwong.shellcheck",
-			"oderwat.indent-rainbow"
+			"oderwat.indent-rainbow",
+			"eamodio.gitlens"
 		]
 	}
 }
