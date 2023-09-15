@@ -12,7 +12,7 @@ function prep_conf_main_build_single() {
 	LOG_SECTION="config_early_init" do_with_conditional_logging config_early_init
 
 	# if interactive, call prepare-host.sh::check_basic_host() early, to avoid disappointments later.
-	if [[ -t 0 ]]; then
+	if [ -t 0 ]; then
 		check_basic_host
 	fi
 
@@ -59,7 +59,7 @@ function prep_conf_main_minimal_ni() {
 	fi
 
 	# needed for BOARD= builds.
-	if [[ "${use_board:-"no"}" == "yes" ]]; then
+	if [ "${use_board:-"no"}" = "yes" ]; then
 		LOG_SECTION="config_source_board_file" do_with_conditional_logging config_source_board_file
 		allow_no_family="no"
 		skip_kernel="no" # contentious: we could do u-boot without kernel...
@@ -219,12 +219,12 @@ function config_post_main() {
 	# <arch>-<major.minor>[-<family>]
 	# So we gotta explictly know the major.minor to be able to do that scheme.
 	# If we don't know, we could use BRANCH as reference, but that changes over time, and leads to wastage.
-	if [[ "${skip_kernel:-"no"}" != "yes" ]]; then
-		if [[ -n "${KERNELSOURCE}" ]]; then
-			if [[ "x${KERNEL_MAJOR_MINOR}x" == "xx" ]]; then
+	if [ "${skip_kernel:-"no"}" != "yes" ]; then
+		if [ -n "${KERNELSOURCE}" ]; then
+			if [ "x${KERNEL_MAJOR_MINOR}x" = "xx" ]; then
 				display_alert "Problem: after configuration, there's not enough kernel info" "Might happen if you used the wrong BRANCH. Make sure 'BRANCH=${BRANCH}' is valid." "err"
 				# if we have KERNEL_TARGET set.
-				if [[ -n "${KERNEL_TARGET}" ]]; then
+				if [ -n "${KERNEL_TARGET}" ]; then
 					# Split KERNEL_TARGET by commas, and display each one.
 					declare -a KERNEL_TARGET_ARRAY=()
 					IFS=',' read -ra KERNEL_TARGET_ARRAY <<< "${KERNEL_TARGET}"
@@ -236,33 +236,33 @@ function config_post_main() {
 			fi
 			# assume the worst, and all surprises will be happy ones
 			declare -g KERNEL_HAS_WORKING_HEADERS="no"
-
 			# Parse/validate the the major, bail if no match
 			declare -i KERNEL_MAJOR_MINOR_MAJOR=${KERNEL_MAJOR_MINOR%%.*}
 			declare -i KERNEL_MAJOR_MINOR_MINOR=${KERNEL_MAJOR_MINOR#*.}
-
-			if [[ "${KERNEL_MAJOR_MINOR_MAJOR}" -ge 6 ]] || [[ "${KERNEL_MAJOR_MINOR_MAJOR}" -ge 5 && "${KERNEL_MAJOR_MINOR_MINOR}" -ge 4 ]]; then # We support 6.x, and 5.x from 5.4
+			if [ "${KERNEL_MAJOR_MINOR_MAJOR}" -ge 6 ] || [ "${KERNEL_MAJOR_MINOR_MAJOR}" -ge 5 && "${KERNEL_MAJOR_MINOR_MINOR}" -ge 4 ]; then # We support 6.x, and 5.x from 5.4
 				declare -g KERNEL_HAS_WORKING_HEADERS="yes"
 				declare -g KERNEL_MAJOR="${KERNEL_MAJOR_MINOR_MAJOR}"
-			elif [[ "${KERNEL_MAJOR_MINOR_MAJOR}" -eq 4 && "${KERNEL_MAJOR_MINOR_MINOR}" -ge 19 ]]; then
+			elif [ "${KERNEL_MAJOR_MINOR_MAJOR}" -eq 4 && "${KERNEL_MAJOR_MINOR_MINOR}" -ge 19 ]; then
 				declare -g KERNEL_MAJOR=4 # We support 4.19+ (less than 5.0) is supported
-			elif [[ "${KERNEL_MAJOR_MINOR_MAJOR}" -eq 4 && "${KERNEL_MAJOR_MINOR_MINOR}" -ge 4 ]]; then
+			elif [ "${KERNEL_MAJOR_MINOR_MAJOR}" -eq 4 && "${KERNEL_MAJOR_MINOR_MINOR}" -ge 4 ]; then
 				declare -g KERNEL_MAJOR=4 # We support 4.x from 4.4
 			else
 				# If you think you can patch packaging to support this, you're probably right. Is _worth_ it though?
 				exit_with_error "Kernel series unsupported" "'${KERNEL_MAJOR_MINOR}' is unsupported, or bad config"
 			fi
-
 			# Default LINUXSOURCEDIR:
 			declare -g LINUXSOURCEDIR="linux-kernel-worktree/${KERNEL_MAJOR_MINOR}__${LINUXFAMILY}__${ARCH}"
-
 			# Allow adding to it with KERNEL_EXTRA_DIR
-			if [[ "${KERNEL_EXTRA_DIR}" != "" ]]; then
+			if [ "${KERNEL_EXTRA_DIR}" != "" ]; then
 				declare -g LINUXSOURCEDIR="${LINUXSOURCEDIR}__${KERNEL_EXTRA_DIR}"
 				display_alert "Using kernel extra dir: '${KERNEL_EXTRA_DIR}'" "LINUXSOURCEDIR: ${LINUXSOURCEDIR}" "debug"
 			fi
 		else
 			declare -g KERNEL_HAS_WORKING_HEADERS="yes" # I assume non-Armbian kernels have working headers, eg: Debian/Ubuntu generic do.
+		fi
+	else
+		display_alert "Skipping kernel config" "skip_kernel=yes" "debug"
+	fi
 		fi
 	else
 		display_alert "Skipping kernel config" "skip_kernel=yes" "debug"
