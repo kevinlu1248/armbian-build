@@ -41,7 +41,7 @@ function artifact_rootfs_prepare_version() {
 	)
 
 	# add more reasons for desktop stuff
-	if [[ "${DESKTOP_ENVIRONMENT}" != "" ]]; then
+	if [ "${DESKTOP_ENVIRONMENT}" != "" ]; then
 		reasons+=("desktop_environment \"${DESKTOP_ENVIRONMENT}\"")
 		reasons+=("desktop_environment_config_name \"${DESKTOP_ENVIRONMENT_CONFIG_NAME}\"")
 		reasons+=("desktop_appgroups_selected \"${DESKTOP_APPGROUPS_SELECTED}\"")
@@ -84,7 +84,7 @@ function artifact_rootfs_build_from_sources() {
 	debug_var cache_name
 	debug_var cache_fname
 
-	if [[ ! -f "${artifact_final_file}" ]]; then
+	if [ ! -f "${artifact_final_file}" ]; then
 		exit_with_error "Rootfs cache file '${artifact_final_file}' does not exist after create_new_rootfs_cache()."
 	else
 		display_alert "Rootfs cache file '${artifact_final_file}' exists after create_new_rootfs_cache()." "YESSS" "debug"
@@ -118,7 +118,7 @@ function artifact_rootfs_cli_adapter_config_prep() {
 	declare -g ROOTFS_COMPRESSION_RATIO="${ROOTFS_COMPRESSION_RATIO:-"15"}" # default to Compress stronger when we make rootfs cache
 
 	# If BOARD is set, use it to convert to an ARCH.
-	if [[ -n ${BOARD} ]]; then
+	if [ -n "${BOARD}" ]; then
 		display_alert "BOARD is set, converting to ARCH for rootfs building" "'BOARD=${BOARD}'" "info"
 		# Convert BOARD to ARCH; source the BOARD and FAMILY stuff
 		LOG_SECTION="config_source_board_file" do_with_conditional_logging config_source_board_file
