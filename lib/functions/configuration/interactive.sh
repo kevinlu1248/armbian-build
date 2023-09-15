@@ -10,11 +10,11 @@
 #!/usr/bin/env bash
 
 function interactive_config_prepare_terminal() {
-	if [[ -z $ROOT_FS_CREATE_ONLY ]]; then
-		if [[ -t 0 ]]; then # "-t fd return True if file descriptor fd is open and refers to a terminal". 0 = stdin, 1 = stdout, 2 = stderr, 3+ custom
+	if [ -z "$ROOT_FS_CREATE_ONLY" ]; then
+		if [ -t 0 ]; then # "-t fd return True if file descriptor fd is open and refers to a terminal". 0 = stdin, 1 = stdout, 2 = stderr, 3+ custom
 			# override stty size, if stdin is a terminal.
-			[[ -n $COLUMNS ]] && stty cols $COLUMNS
-			[[ -n $LINES ]] && stty rows $LINES
+			[ -n "$COLUMNS" ] && stty cols $COLUMNS
+			[ -n "$LINES" ] && stty rows $LINES
 			declare -g TTY_X=$(($(stty size | awk '{print $2}') - 6)) # determine terminal width
 			declare -g TTY_Y=$(($(stty size | awk '{print $1}') - 6)) # determine terminal height
 		fi
