@@ -40,19 +40,19 @@ export TEXTDOMAINDIR="${datarootdir}/locale"
 CLASS="--class gnu-linux --class gnu --class os"
 SUPPORTED_INITS="sysvinit:/lib/sysvinit/init systemd:/lib/systemd/systemd upstart:/sbin/upstart"
 
-if [ "x${GRUB_DISTRIBUTOR}" = "x" ]; then
-	OS=GNU/Linux
-else
-	case ${GRUB_DISTRIBUTOR} in
-		Ubuntu | Kubuntu)
-			OS="${GRUB_DISTRIBUTOR}"
-			;;
-		*)
-			OS="${GRUB_DISTRIBUTOR} GNU/Linux"
-			;;
-	esac
-	CLASS="--class $(echo ${GRUB_DISTRIBUTOR} | tr 'A-Z' 'a-z' | cut -d' ' -f1 | LC_ALL=C sed 's,[^[:alnum:]_],_,g') ${CLASS}"
-fi
+	if [ -n "${GRUB_DISTRIBUTOR}" ]; then
+		case ${GRUB_DISTRIBUTOR} in
+			Ubuntu | Kubuntu)
+				OS="${GRUB_DISTRIBUTOR}"
+				;;
+			*)
+				OS="${GRUB_DISTRIBUTOR} GNU/Linux"
+				;;
+		esac
+		CLASS="--class $(echo ${GRUB_DISTRIBUTOR} | tr 'A-Z' 'a-z' | cut -d' ' -f1 | LC_ALL=C sed 's,[^[:alnum:]_],_,g') ${CLASS}"
+	else
+		OS=GNU/Linux
+	fi
 
 # loop-AES arranges things so that /dev/loop/X can be our root device, but
 # the initrds that Linux uses don't like that.
@@ -270,19 +270,11 @@ function gfxmode {
 EOF
 if [ "$vt_handoff" = 1 ]; then
 	cat << 'EOF'
-	if [ "${1}" = "keep" ]; then
-		set vt_handoff=vt.handoff=7
+	if [ -n "${GRUB_DISABLE_LINUX_UUID}" ]; then
+		LINUX_ROOT_DEVICE=UUID=${GRUB_DEVICE_UUID}
 	else
-		set vt_handoff=
+		LINUX_ROOT_DEVICE=PARTUUID=${GRUB_DEVICE_PARTUUID}
 	fi
-EOF
-fi
-cat << EOF
-}
-EOF
-
-# Use ELILO's generic "efifb" when it's known to be available.
-# FIXME: We need an interface to select vesafb in case efifb can't be used.
 if [ "x$GRUB_GFXPAYLOAD_LINUX" != x ] || [ "$gfxpayload_dynamic" = 0 ]; then
 	echo "set linux_gfx_mode=$GRUB_GFXPAYLOAD_LINUX"
 else
