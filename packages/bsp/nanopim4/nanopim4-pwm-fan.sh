@@ -11,11 +11,11 @@
 ###############################################################################
 
 cache () {
-	if [[ -z "$1" ]]; then
+	if [[ -n "$1" ]]; then
+		local FILENAME="$1"
+	else
 		echo '[pwm-fan] Cache file was not specified. Assuming generic.'
 		local FILENAME='generic'
-	else
-		local FILENAME="$1"
 	fi
 	# cache to memory
 	CACHE_ROOT='/tmp/pwm-fan/'
@@ -34,7 +34,7 @@ check_requisites () {
 	local REQUISITES=('bc' 'cat' 'echo' 'mkdir' 'touch' 'trap' 'sleep')
 	echo '[pwm-fan] Checking requisites: '${REQUISITES[@]}
 	for cmd in ${REQUISITES[@]}; do
-		if [[ -z $(command -v $cmd) ]]; then
+		if [[ -n $(command -v $cmd) ]]; then
 			echo '[pwm-fan] The following program is not installed or cannot be found in this users $PATH: '$cmd
 			echo '[pwm-fan] Fix it and try again.'
 			end "Missing important packages. Cannot continue." 1
