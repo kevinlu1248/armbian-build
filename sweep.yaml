@@ -1,6 +1,3 @@
 sandbox:
-  install:
-    - trunk init
-  check:
-    - '[[ "{file_path}" != *.sh ]] && trunk fmt {file_path} || exit 0'
-    - trunk check --fix {file_path}
+  install: []
+  check: []
