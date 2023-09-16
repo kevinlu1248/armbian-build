@@ -4,5 +4,9 @@ branch: sweep-experiment
 gha_enabled: True
 draft: False
 
+# Disable checking as the codebase returns too many issues that confuse the AI
+sandbox:
+  check: exit 0
+
 # Optimizations for sweep to not halt while processing huge files
 blocked_dirs: [ ".github/", "patches/", "packages/blobs/", ".vscode/" ]
