@@ -19,23 +19,27 @@ DIR_SHELLCHECK="${SRC}/cache/tools/shellcheck"
 mkdir -p "${DIR_SHELLCHECK}"
 
 MACHINE="${BASH_VERSINFO[5]}"
-case "$MACHINE" in
+	case "$MACHINE" in
 	*darwin*) SHELLCHECK_OS="darwin" ;;
 	*linux*) SHELLCHECK_OS="linux" ;;
 	*)
-		echo "unknown os: $MACHINE"
-		exit 3
+		if [ -n "$MACHINE" ]; then
+			echo "unknown os: $MACHINE"
+			exit 3
+		fi
 		;;
-esac
+	esac
 
-case "$MACHINE" in
+	case "$MACHINE" in
 	*aarch64*) SHELLCHECK_ARCH="aarch64" ;;
 	*x86_64*) SHELLCHECK_ARCH="x86_64" ;;
 	*)
-		echo "unknown arch: $MACHINE"
-		exit 2
+		if [ -n "$MACHINE" ]; then
+			echo "unknown arch: $MACHINE"
+			exit 2
+		fi
 		;;
-esac
+	esac
 
 # https://github.com/koalaman/shellcheck/releases/download/v0.8.0/shellcheck-v0.8.0.darwin.x86_64.tar.xz
 # https://github.com/koalaman/shellcheck/releases/download/v0.8.0/shellcheck-v0.8.0.linux.aarch64.tar.xz
