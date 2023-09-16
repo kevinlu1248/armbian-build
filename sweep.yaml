@@ -1,0 +1,15 @@
+description: "Armbian is a framework used to build various linux distributions with the main focus on deploying images for Single Board Computers. It is mainly written in bash."
+
+gha_enabled: True
+draft: False
+
+# Optimizations for sweep to not halt while processing huge files
+blocked_dirs: [ ".github/", "patches/", "packages/blobs/", ".vscode/" ]
+
+# To address issues with sandbox https://github.com/armbian-kreyren/armbian-build/issues/11#issuecomment-1722065292
+sandbox:
+  install:
+    - trunk init
+  check:
+    - '[[ "{file_path}" != *.sh ]] && trunk fmt {file_path} || exit 0'
+    - trunk check --fix {file_path}
