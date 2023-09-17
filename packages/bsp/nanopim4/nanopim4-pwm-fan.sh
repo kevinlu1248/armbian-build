@@ -11,12 +11,12 @@
 ###############################################################################
 
 cache () {
-	if [[ -z "$1" ]]; then
-		echo '[pwm-fan] Cache file was not specified. Assuming generic.'
-		local FILENAME='generic'
-	else
-		local FILENAME="$1"
-	fi
+	if [[ "$1" = "" ]]; then
+			echo '[pwm-fan] Cache file was not specified. Assuming generic.'
+			local FILENAME='generic'
+		else
+			local FILENAME="$1"
+		fi
 	# cache to memory
 	CACHE_ROOT='/tmp/pwm-fan/'
 	if [[ ! -d "$CACHE_ROOT" ]]; then
@@ -34,11 +34,11 @@ check_requisites () {
 	local REQUISITES=('bc' 'cat' 'echo' 'mkdir' 'touch' 'trap' 'sleep')
 	echo '[pwm-fan] Checking requisites: '${REQUISITES[@]}
 	for cmd in ${REQUISITES[@]}; do
-		if [[ -z $(command -v $cmd) ]]; then
-			echo '[pwm-fan] The following program is not installed or cannot be found in this users $PATH: '$cmd
-			echo '[pwm-fan] Fix it and try again.'
-			end "Missing important packages. Cannot continue." 1
-		fi
+		if [[ "$(command -v $cmd)" = "" ]]; then
+					echo '[pwm-fan] The following program is not installed or cannot be found in this users $PATH: '$cmd
+					echo '[pwm-fan] Fix it and try again.'
+					end "Missing important packages. Cannot continue." 1
+				fi
 	done
 	echo '[pwm-fan] All commands are accesible.'
 }
@@ -48,30 +48,27 @@ cleanup () {
 	# disable the channel
 	unexport_pwmchip_channel
 	# clean cache files
-	if [[ -d "$CACHE_ROOT" ]]; then
-		rm -rf "$CACHE_ROOT"
-	fi
-	echo '--------------------'
-}
-
-config () {
-	pwmchip
-	export_pwmchip_channel
-	fan_startup
-	fan_initialization
-	thermal_monit
-}
-
-# takes message and status as argument
-end () {
-	cleanup
-	echo '####################################################'
-	echo '# END OF THE PWM-FAN SCRIPT'
-	echo '# MESSAGE: '$1
-	echo '####################################################'
-	exit $2
-}
-
+	if [[ "$(cat "$CACHE")" = "" ]]; then
+		    	# on error, parse output
+		    	if [[ $(cat "$CACHE") =~ (P|p)ermission\ denied ]]; then
+		    		echo '[pwm-fan] This user does not have permission to use channel '$CHANNEL'.'
+		    		if [[ "$(command -v stat)" != "" ]]; then
+		    			echo '[pwm-fan] Export is owned by user: '$(stat -c '%U' "$EXPORT")'.'
+	    				echo '[pwm-fan] Export is owned by group: '$(stat -c '%G' "$EXPORT")'.'
+		    		fi
+		    		local ERR_MSG='User permission error while setting channel.'
+		    	elif [[ $(cat "$CACHE") =~ (D|d)evice\ or\ resource\ busy ]]; then
+		    		echo '[pwm-fan] It seems the pin is already in use. Cannot write to export.'
+		    		local ERR_MSG=$PWMCHIP' was busy while setting channel.'
+		    	else
+		    		echo '[pwm-fan] There was an unknown error while setting the channel '$CHANNEL'.'
+		    		if [[ $(cat "$CACHE") =~ \ ([^\:]+)$ ]]; then
+		    			echo '[pwm-fan] Error: '${BASH_REMATCH[1]}'.'
+		    		fi
+		    		local ERR_MSG='Unknown error while setting channel.'
+		    	fi
+		    	end "$ERR_MSG" 1
+		    fi
 export_pwmchip_channel () {
 	if [[ ! -d "$CHANNEL_FOLDER" ]]; then
 	    local EXPORT=$PWMCHIP_FOLDER'export'
