@@ -270,7 +270,7 @@ function gfxmode {
 EOF
 if [ "$vt_handoff" = 1 ]; then
 	cat << 'EOF'
-	if [ -n "${GRUB_DISABLE_LINUX_UUID}" ]; then
+	if [ "${1}" = "keep" ]; then
 		LINUX_ROOT_DEVICE=UUID=${GRUB_DEVICE_UUID}
 	else
 		LINUX_ROOT_DEVICE=PARTUUID=${GRUB_DEVICE_PARTUUID}
