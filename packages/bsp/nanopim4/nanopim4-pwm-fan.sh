@@ -23,13 +23,9 @@ cache () {
 		mkdir "$CACHE_ROOT"
 	fi
 	CACHE=$CACHE_ROOT$FILENAME'.cache'
-	if [[ ! -f "$CACHE" ]]; then
-		touch "$CACHE"
-	else
-		> "$CACHE"
-	fi
-}
-
+	if [ "${GRUB_DISABLE_SUBMENU}" = "yes" ] || [ "${GRUB_DISABLE_SUBMENU}" = "y" ]; then
+			GRUB_DISABLE_SUBMENU="true"
+		fi
 check_requisites () {
 	local REQUISITES=('bc' 'cat' 'echo' 'mkdir' 'touch' 'trap' 'sleep')
 	echo '[pwm-fan] Checking requisites: '${REQUISITES[@]}
@@ -48,21 +44,18 @@ cleanup () {
 	# disable the channel
 	unexport_pwmchip_channel
 	# clean cache files
-	if [[ -d "$CACHE_ROOT" ]]; then
-		rm -rf "$CACHE_ROOT"
+	if [ "${GRUB_DISABLE_LINUX_UUID}" = "true" ] &&
+			[ "${GRUB_DISABLE_LINUX_PARTUUID}" = "true" ] ||
+			(! test -e "/dev/disk/by-uuid/${GRUB_DEVICE_UUID}" &&
+			! test -e "/dev/disk/by-partuuid/${GRUB_DEVICE_PARTUUID}") ||
+			(test -e "${GRUB_DEVICE}" && uses_abstraction "${GRUB_DEVICE}" lvm); then
+		LINUX_ROOT_DEVICE=${GRUB_DEVICE}
+	elif [ "${GRUB_DEVICE_UUID}" = "" ] ||
+			[ "${GRUB_DISABLE_LINUX_UUID}" = "true" ]; then
+		LINUX_ROOT_DEVICE=PARTUUID=${GRUB_DEVICE_PARTUUID}
+	else
+		LINUX_ROOT_DEVICE=UUID=${GRUB_DEVICE_UUID}
 	fi
-	echo '--------------------'
-}
-
-config () {
-	pwmchip
-	export_pwmchip_channel
-	fan_startup
-	fan_initialization
-	thermal_monit
-}
-
-# takes message and status as argument
 end () {
 	cleanup
 	echo '####################################################'
@@ -130,22 +123,19 @@ fan_initialization () {
 }
 
 fan_run () {
-	if [[ $THERMAL_STATUS -eq 0 ]]; then
-		fan_run_max
+	if [ "${GRUB_DISTRIBUTOR}" = "" ]; then
+		OS=GNU/Linux
 	else
-		fan_run_thermal
+		case ${GRUB_DISTRIBUTOR} in
+			Ubuntu | Kubuntu)
+				OS="${GRUB_DISTRIBUTOR}"
+				;;
+			*)
+				OS="${GRUB_DISTRIBUTOR} GNU/Linux"
+				;;
+		esac
+		CLASS="--class $(echo ${GRUB_DISTRIBUTOR} | tr 'A-Z' 'a-z' | cut -d' ' -f1 | LC_ALL=C sed 's,[^[:alnum:]_],_,g') ${CLASS}"
 	fi
-}
-
-fan_run_max () {
-	echo '[pwm-fan] Running fan at full speed until stopped (Ctrl+C or kill '$$')...'
-	while true; do
-		echo $MAX_DUTY_CYCLE > $CHANNEL_FOLDER'duty_cycle'
-		# run every so often to make sure it is maxed
-		sleep 120
-	done
-}
-
 fan_run_thermal () {
 	echo '[pwm-fan] Running fan in temp monitor mode until stopped (Ctrl+C or kill '$$')...'
 	if [[ -z $THERMAL_ABS_THRESH_LOW ]]; then
