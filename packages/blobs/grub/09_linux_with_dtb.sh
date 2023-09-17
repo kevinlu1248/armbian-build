@@ -40,7 +40,7 @@ export TEXTDOMAINDIR="${datarootdir}/locale"
 CLASS="--class gnu-linux --class gnu --class os"
 SUPPORTED_INITS="sysvinit:/lib/sysvinit/init systemd:/lib/systemd/systemd upstart:/sbin/upstart"
 
-if [ "x${GRUB_DISTRIBUTOR}" = "x" ]; then
+if [ "${GRUB_DISTRIBUTOR}" = "" ]; then
 	OS=GNU/Linux
 else
 	case ${GRUB_DISTRIBUTOR} in
@@ -73,15 +73,15 @@ GRUB_DISABLE_LINUX_PARTUUID=${GRUB_DISABLE_LINUX_PARTUUID-true}
 
 # btrfs may reside on multiple devices. We cannot pass them as value of root= parameter
 # and mounting btrfs requires user space scanning, so force UUID in this case.
-if ([ "x${GRUB_DEVICE_UUID}" = "x" ] && [ "x${GRUB_DEVICE_PARTUUID}" = "x" ]) ||
-	([ "x${GRUB_DISABLE_LINUX_UUID}" = "xtrue" ] &&
-		[ "x${GRUB_DISABLE_LINUX_PARTUUID}" = "xtrue" ]) ||
+if ([ "${GRUB_DEVICE_UUID}" = "" ] && [ "${GRUB_DEVICE_PARTUUID}" = "" ]) ||
+	([ "${GRUB_DISABLE_LINUX_UUID}" = "true" ] &&
+		[ "${GRUB_DISABLE_LINUX_PARTUUID}" = "true" ]) ||
 	(! test -e "/dev/disk/by-uuid/${GRUB_DEVICE_UUID}" &&
 		! test -e "/dev/disk/by-partuuid/${GRUB_DEVICE_PARTUUID}") ||
 	(test -e "${GRUB_DEVICE}" && uses_abstraction "${GRUB_DEVICE}" lvm); then
 	LINUX_ROOT_DEVICE=${GRUB_DEVICE}
-elif [ "x${GRUB_DEVICE_UUID}" = "x" ] ||
-	[ "x${GRUB_DISABLE_LINUX_UUID}" = "xtrue" ]; then
+elif [ "${GRUB_DEVICE_UUID}" = "" ] ||
+	[ "${GRUB_DISABLE_LINUX_UUID}" = "true" ]; then
 	LINUX_ROOT_DEVICE=PARTUUID=${GRUB_DEVICE_PARTUUID}
 else
 	LINUX_ROOT_DEVICE=UUID=${GRUB_DEVICE_UUID}
@@ -315,7 +315,7 @@ EOF
 submenu_indentation=""
 
 is_top_level=true
-while [ "x$list" != "x" ]; do
+while [ "$list" != "" ]; do
 	linux=$(version_find_latest $list)
 	case $linux in
 		*.efi.signed)
@@ -399,8 +399,8 @@ while [ "x$list" != "x" ]; do
 	if test -z "${initramfs}" && test -z "${initrd_real}"; then
 		# "UUID=" and "ZFS=" magic is parsed by initrd or initramfs.  Since there's
 		# no initrd or builtin initramfs, it can't work here.
-		if [ "x${GRUB_DEVICE_PARTUUID}" = "x" ] ||
-			[ "x${GRUB_DISABLE_LINUX_PARTUUID}" = "xtrue" ]; then
+		if [ "${GRUB_DEVICE_PARTUUID}" = "" ] ||
+					[ "${GRUB_DISABLE_LINUX_PARTUUID}" = "true" ]; then
 
 			linux_root_device_thisversion=${GRUB_DEVICE}
 		else
@@ -412,11 +412,11 @@ while [ "x$list" != "x" ]; do
 	# mentioned in the documentation that has to be set to 'y' instead of 'true' to
 	# enable it. This caused a lot of confusion to users that set the option to 'y',
 	# 'yes' or 'true'. This was fixed but all of these values must be supported now.
-	if [ "x${GRUB_DISABLE_SUBMENU}" = xyes ] || [ "x${GRUB_DISABLE_SUBMENU}" = xy ]; then
-		GRUB_DISABLE_SUBMENU="true"
-	fi
+	if [ "${GRUB_DISABLE_SUBMENU}" = "yes" ] || [ "${GRUB_DISABLE_SUBMENU}" = "y" ]; then
+			GRUB_DISABLE_SUBMENU="true"
+		fi
 
-	if [ "x$is_top_level" = xtrue ] && [ "x${GRUB_DISABLE_SUBMENU}" != xtrue ]; then
+	if [ "$is_top_level" = "true" ] && [ "${GRUB_DISABLE_SUBMENU}" != "true" ]; then
 		linux_entry "${OS}" "${version}" simple \
 			"${GRUB_CMDLINE_LINUX} ${GRUB_CMDLINE_LINUX_DEFAULT}"
 
