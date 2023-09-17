@@ -23,7 +23,7 @@ MACHINE="${BASH_VERSINFO[5]}"
 	*darwin*) SHELLCHECK_OS="darwin" ;;
 	*linux*) SHELLCHECK_OS="linux" ;;
 	*)
-		if [ -n "$MACHINE" ]; then
+		if [ -z "$MACHINE" ]; then
 			echo "unknown os: $MACHINE"
 			exit 3
 		fi
@@ -34,7 +34,7 @@ MACHINE="${BASH_VERSINFO[5]}"
 	*aarch64*) SHELLCHECK_ARCH="aarch64" ;;
 	*x86_64*) SHELLCHECK_ARCH="x86_64" ;;
 	*)
-		if [ -n "$MACHINE" ]; then
+		if [ -z "$MACHINE" ]; then
 			echo "unknown arch: $MACHINE"
 			exit 2
 		fi
