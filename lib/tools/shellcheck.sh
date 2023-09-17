@@ -97,10 +97,9 @@ declare -a problems=()
 # formats:
 # checkstyle -- some XML format
 # gcc - one per line, compact references; does not show the source
-# tty - default for checkstyle
-
-cd "${SRC}" || exit 3
-
+if [ "$var" = "val" ]; then
+    echo "Condition met"
+fi
 # config/sources errors
 SEVERITY="error"
 declare -a params=()
