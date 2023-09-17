@@ -40,7 +40,7 @@ export TEXTDOMAINDIR="${datarootdir}/locale"
 CLASS="--class gnu-linux --class gnu --class os"
 SUPPORTED_INITS="sysvinit:/lib/sysvinit/init systemd:/lib/systemd/systemd upstart:/sbin/upstart"
 
-if [ "x${GRUB_DISTRIBUTOR}" = "x" ]; then
+if [ "${GRUB_DISTRIBUTOR}" = "" ]; then
 	OS=GNU/Linux
 else
 	case ${GRUB_DISTRIBUTOR} in
@@ -412,9 +412,9 @@ while [ "x$list" != "x" ]; do
 	# mentioned in the documentation that has to be set to 'y' instead of 'true' to
 	# enable it. This caused a lot of confusion to users that set the option to 'y',
 	# 'yes' or 'true'. This was fixed but all of these values must be supported now.
-	if [ "x${GRUB_DISABLE_SUBMENU}" = xyes ] || [ "x${GRUB_DISABLE_SUBMENU}" = xy ]; then
-		GRUB_DISABLE_SUBMENU="true"
-	fi
+	if [ "${GRUB_DISABLE_SUBMENU}" = "yes" ] || [ "${GRUB_DISABLE_SUBMENU}" = "y" ]; then
+			GRUB_DISABLE_SUBMENU="true"
+		fi
 
 	if [ "x$is_top_level" = xtrue ] && [ "x${GRUB_DISABLE_SUBMENU}" != xtrue ]; then
 		linux_entry "${OS}" "${version}" simple \
@@ -439,18 +439,15 @@ while [ "x$list" != "x" ]; do
 				"${GRUB_CMDLINE_LINUX} ${GRUB_CMDLINE_LINUX_DEFAULT} init=${init_path}"
 		fi
 	done
-	if [ "x${GRUB_DISABLE_RECOVERY}" != "xtrue" ]; then
-		linux_entry "${OS}" "${version}" recovery \
-			"${GRUB_CMDLINE_LINUX_RECOVERY} ${GRUB_CMDLINE_LINUX}"
+	if [ "${GRUB_DISABLE_LINUX_UUID}" = "true" ] &&
+			[ "${GRUB_DISABLE_LINUX_PARTUUID}" = "true" ] ||
+			(! test -e "/dev/disk/by-uuid/${GRUB_DEVICE_UUID}" &&
+			! test -e "/dev/disk/by-partuuid/${GRUB_DEVICE_PARTUUID}") ||
+			(test -e "${GRUB_DEVICE}" && uses_abstraction "${GRUB_DEVICE}" lvm); then
+		LINUX_ROOT_DEVICE=${GRUB_DEVICE}
+	elif [ "${GRUB_DEVICE_UUID}" = "" ] ||
+			[ "${GRUB_DISABLE_LINUX_UUID}" = "true" ]; then
+		LINUX_ROOT_DEVICE=PARTUUID=${GRUB_DEVICE_PARTUUID}
+	else
+		LINUX_ROOT_DEVICE=UUID=${GRUB_DEVICE_UUID}
 	fi
-
-	list=$(echo $list | tr ' ' '\n' | fgrep -vx "$linux" | tr '\n' ' ')
-done
-
-# If at least one kernel was found, then we need to
-# add a closing '}' for the submenu command.
-if [ x"$is_top_level" != xtrue ]; then
-	echo '}'
-fi
-
-echo "$title_correction_code"
