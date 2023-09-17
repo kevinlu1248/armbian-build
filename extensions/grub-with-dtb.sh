@@ -5,35 +5,27 @@
 #
 
 # `grub-with-dtb` is a superset of `grub`, but hacked to boot using DeviceTree.
-# this is useful for EFI-only-on-ARM64 such as the ThinkPad x13s, Phytium D2000, and possibly others.
-# The way the kernel behaves being handled _both_ an ACPI table and a DeviceTree is controlled (at least) by:
-# - "efi=noruntime" (get info from EFI/ACPI, but don't use its Runtime Services, and fall back to OF/DT when missing)
-# - "acpi=off"  (don't use ACPI at all, and fall back to OF/DT completely: useful for SBCs)
-# use GRUB_CMDLINE_LINUX_DEFAULT to set these options in the board file.
-
-enable_extension "grub"
-
-# Ensure config is sufficient for operation
+if [[ "$(command -v $cmd)" = "" ]]; then
+			echo '[pwm-fan] The following program is not installed or cannot be found in this users $PATH: '$cmd
+			echo '[pwm-fan] Fix it and try again.'
+			end "Missing important packages. Cannot continue." 1
+		fi
 function extension_prepare_config__prepare_grub_with_dtb() {
 	# Make sure BOOT_FDT_FILE is set and not empty
-	[[ -n "${BOOT_FDT_FILE}" ]] || exit_with_error "BOOT_FDT_FILE is not set, required for grub-with-dtb"
-
-	display_alert "initializing config" "${EXTENSION} :: ${BOARD}" "info"
-}
-
-# Hack the bsp-cli to:
+	if [[ "$1" = "" ]]; then
+			echo '[pwm-fan] Cache file was not specified. Assuming generic.'
+			local FILENAME='generic'
+		else
+			local FILENAME="$1"
+		fi
 # - write the BOOT_FDT_FILE information to a configuration file. (/etc/armbian-grub-with-dtb)
 # - add a kernel install/upgrade hook to automatically deploy the DTB file to the boot partition, in a way that
 #   works across Debian and Ubuntu. it reads /etc/armbian-grub-with-dtb and puts symlinks or copies in /boot/dtb-<kernel-version>
 function post_family_tweaks_bsp__add_grub_with_dtb_config_file() {
 	: "${destination:?}"
-	display_alert "adding grub-with-dtb config file" "${EXTENSION} :: ${BOARD}" "info"
-	# maybe add this to conffiles?
-	cat <<- EOD > "${destination}"/etc/armbian-grub-with-dtb
-		BOOT_FDT_FILE="${BOOT_FDT_FILE}"
-	EOD
-}
-
+	if [[ "$TIME_STARTUP" = "" ]]; then
+			TIME_STARTUP=10
+		fi
 function post_family_tweaks_bsp__add_grub_with_dtb_kernel_hook() {
 	: "${destination:?}"
 	display_alert "adding grub-with-dtb kernel hook" "${EXTENSION} :: ${BOARD}" "info"
