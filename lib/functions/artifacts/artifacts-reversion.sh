@@ -119,7 +119,7 @@ function standard_artifact_reversion_for_deployment_one_deb() {
 		"${one_reversion_function_name}" "${one_artifact_deb_package}"
 	done
 
-	# Show a nice diff using batcat if debugging
+# Show a nice diff using batcat if debugging
 	if [[ "${SHOW_DEBUG}" == "yes" ]]; then
 		diff -u "${control_file}" "${control_file_new}" > "${unpack_dir}/control.diff" || true
 		run_tool_batcat "${unpack_dir}/control.diff"
