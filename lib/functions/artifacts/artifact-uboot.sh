@@ -165,19 +165,17 @@ function artifact_uboot_build_from_sources() {
 	declare uboot_git_revision="not_determined_yet"
 	LOG_SECTION="uboot_prepare_git" do_with_logging_unless_user_terminal uboot_prepare_git
 
-	# Hack, if ARTIFACT_BUILD_INTERACTIVE=yes, don't run under logging manager. Emit a warning about it.
-	if [[ "${ARTIFACT_BUILD_INTERACTIVE:-"no"}" == "yes" ]]; then
-		display_alert "Running uboot build in interactive mode" "log file will be incomplete" "info"
-		compile_uboot
-	else
-		LOG_SECTION="compile_uboot" do_with_logging compile_uboot
-	fi
+if [[ "${ARTIFACT_BUILD_INTERACTIVE:-"no"}" == "yes" ]]; then
+	display_alert "Running uboot build in interactive mode" "log file will be incomplete" "info"
+	compile_uboot
+else
+	LOG_SECTION="compile_uboot" do_with_logging compile_uboot
+fi
 }
 
 function artifact_uboot_cli_adapter_pre_run() {
 	declare -g ARMBIAN_COMMAND_REQUIRE_BASIC_DEPS="yes" # Require prepare_host_basic to run before the command.
 
-	# "gimme root on a Linux machine"
 	cli_standard_relaunch_docker_or_sudo
 }
 
