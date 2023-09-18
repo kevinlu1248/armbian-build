@@ -46,7 +46,7 @@ SHELLCHECK_FN_TARXZ="${SHELLCHECK_FN}.tar.xz"
 DOWN_URL="https://github.com/koalaman/shellcheck/releases/download/v${SHELLCHECK_VERSION}/${SHELLCHECK_FN_TARXZ}"
 SHELLCHECK_BIN="${DIR_SHELLCHECK}/${SHELLCHECK_FN}"
 
-if [[ ! -f "${SHELLCHECK_BIN}" ]]; then
+if [[ ! -f ${SHELLCHECK_BIN} ]]; then
 	echo "Cache miss, downloading..."
 	echo "MACHINE: ${MACHINE}"
 	echo "Down URL: ${DOWN_URL}"
@@ -55,7 +55,7 @@ if [[ ! -f "${SHELLCHECK_BIN}" ]]; then
 	tar -xf "${SHELLCHECK_BIN}.tar.xz" -C "${DIR_SHELLCHECK}" "shellcheck-v${SHELLCHECK_VERSION}/shellcheck"
 	mv -v "${DIR_SHELLCHECK}/shellcheck-v${SHELLCHECK_VERSION}/shellcheck" "${SHELLCHECK_BIN}"
 	rm -rf "${DIR_SHELLCHECK}/shellcheck-v${SHELLCHECK_VERSION}" "${SHELLCHECK_BIN}.tar.xz"
-	chmod +x "${SHELLCHECK_BIN}"
+	chmod 755 "${SHELLCHECK_BIN}"
 fi
 ACTUAL_VERSION="$("${SHELLCHECK_BIN}" --version | grep "^version")"
 
