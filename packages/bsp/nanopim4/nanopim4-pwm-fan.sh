@@ -11,37 +11,37 @@
 ###############################################################################
 
 cache () {
-	if [[ -z "$1" ]]; then
-		echo '[pwm-fan] Cache file was not specified. Assuming generic.'
-		local FILENAME='generic'
-	else
-		local FILENAME="$1"
-	fi
-	# cache to memory
-	CACHE_ROOT='/tmp/pwm-fan/'
-	if [[ ! -d "$CACHE_ROOT" ]]; then
-		mkdir "$CACHE_ROOT"
-	fi
-	CACHE=$CACHE_ROOT$FILENAME'.cache'
-	if [[ ! -f "$CACHE" ]]; then
-		touch "$CACHE"
-	else
-		> "$CACHE"
-	fi
-}
-
-check_requisites () {
-	local REQUISITES=('bc' 'cat' 'echo' 'mkdir' 'touch' 'trap' 'sleep')
-	echo '[pwm-fan] Checking requisites: '${REQUISITES[@]}
-	for cmd in ${REQUISITES[@]}; do
-		if [[ -z $(command -v $cmd) ]]; then
-			echo '[pwm-fan] The following program is not installed or cannot be found in this users $PATH: '$cmd
-			echo '[pwm-fan] Fix it and try again.'
-			end "Missing important packages. Cannot continue." 1
-		fi
-	done
-	echo '[pwm-fan] All commands are accesible.'
-}
+ if [[ -z $1 ]]; then
+ 	echo '[pwm-fan] Cache file was not specified. Assuming generic.'
+ 	local FILENAME='generic'
+ else
+ 	local FILENAME="$1"
+ fi
+ # cache to memory
+ CACHE_ROOT='/tmp/pwm-fan/'
+ if [[ ! -d $CACHE_ROOT ]]; then
+ 	mkdir "$CACHE_ROOT"
+ fi
+ CACHE=$CACHE_ROOT$FILENAME'.cache'
+ if [[ ! -f $CACHE ]]; then
+ 	touch "$CACHE"
+ else
+ 	> "$CACHE"
+ fi
+ }
+ 
+ check_requisites () {
+ 	local REQUISITES=('bc' 'cat' 'echo' 'mkdir' 'touch' 'trap' 'sleep')
+ 	echo '[pwm-fan] Checking requisites: '${REQUISITES[@]}
+ 	for cmd in ${REQUISITES[@]}; do
+ 		if [[ -z $(command -v $cmd) ]]; then
+ 			echo '[pwm-fan] The following program is not installed or cannot be found in this users $PATH: '$cmd
+ 			echo '[pwm-fan] Fix it and try again.'
+ 			end "Missing important packages. Cannot continue." 1
+ 		fi
+ 	done
+ 	echo '[pwm-fan] All commands are accesible.'
+ }
 
 cleanup () {
 	echo '---- cleaning up ----'
@@ -399,90 +399,90 @@ while getopts 'c:C:d:D:fF:hl:m:p:s:t:T:' OPT; do
             fi
             ;;
         C)
-            PWMCHIP="$OPTARG"
-            if [[ ! $PWMCHIP =~ ^pwmchip[0-9]+$ ]]; then
-                echo 'The name of the pwm controller must contain pwmchip and at least a number (pwmchip1).'
-                exit 1
-            fi
-            ;;
-        d)
-            DC_PERCENT_MIN="$OPTARG"
-            if [[ ! $DC_PERCENT_MIN =~ ^([0-6][0-9]?|70)$ ]]; then
-                echo 'The lowest duty cycle threshold must be an integer between 0 and 70.'
-                exit 1
-            fi
-            ;;
-        D)
-            DC_PERCENT_MAX="$OPTARG"
-            if [[ ! $DC_PERCENT_MAX =~ ^([8-9][0-9]?|100)$ ]]; then
-                echo 'The highest duty cycle threshold must be an integer between 80 and 100.'
-                exit 1
-            fi
-            ;;
-        f)
-            SKIP_THERMAL=1
-            ;;
-        F)
-            TIME_STARTUP="$OPTARG"
-            if [[ ! $TIME_STARTUP =~ ^[0-9]+$ ]]; then
-                echo 'The time to run the fan at full speed during startup must be an integer.'
-                exit 1
-            fi
-            ;;
-        h)
-            usage
-            exit 0
-            ;;
-        l)
-            TIME_LOOP="$OPTARG"
-            if [[ ! $TIME_LOOP =~ ^[0-9]+$ ]]; then
-                echo 'The time to loop thermal reads must be an integer.'
-                exit 1
-            fi
-            ;;
-        m)
-            MONIT_DEVICE="$OPTARG"
-            ;;
-        p)
-            PERIOD="$OPTARG"
-            if [[ ! $PERIOD =~ ^[0-9]+$ ]]; then
-                echo 'The period must be an integer.'
-                exit 1
-            fi
-            ;;
-        s)
-            TEMPS_SIZE="$OPTARG"
-            if [[ ! $TEMPS_SIZE =~ ^[0-9]+$ ]]; then
-                echo 'The max size of the temperature array must be an integer.'
-                exit 1
-            fi
-            ;;
-        t)
-            THERMAL_ABS_THRESH_LOW="$OPTARG"
-            if [[ ! $THERMAL_ABS_THRESH_LOW =~ ^[0-4][0-9]?$ ]]; then
-                echo 'The lowest temperature threshold must be an integer between 0 and 49.'
-                exit 1
-            fi
-            ;;
-        T)
-            THERMAL_ABS_THRESH_HIGH="$OPTARG"
-            if [[ ! $THERMAL_ABS_THRESH_HIGH =~ ^([5-9][0-9]?|1[0-1][0-9]?|120)$ ]]; then
-                echo 'The highest temperature threshold must be an integer between 50 and 120.'
-                exit 1
-            fi
-            ;;
-        \?)
-            echo '!! ATTENTION !!' 
-            echo '................................'
-            echo 'Detected an invalid option.'
-            echo 'Try: '"$0"' -h'
-            echo '................................'
-            exit 1
-            ;;
-    esac
-done
-
-start
-trap 'interrupt' SIGINT SIGHUP SIGTERM SIGKILL
-config
-fan_run
+                    PWMCHIP="$OPTARG"
+                    if [[ ! $PWMCHIP =~ ^pwmchip[0-9]+$ ]]; then
+                        echo 'The name of the pwm controller must contain pwmchip and at least a number (pwmchip1).'
+                        exit 1
+                    fi
+                    ;;
+                d)
+                    DC_PERCENT_MIN="$OPTARG"
+                    if [[ ! $DC_PERCENT_MIN =~ ^([0-6][0-9]?|70)$ ]]; then
+                        echo 'The lowest duty cycle threshold must be an integer between 0 and 70.'
+                        exit 1
+                    fi
+                    ;;
+                D)
+                    DC_PERCENT_MAX="$OPTARG"
+                    if [[ ! $DC_PERCENT_MAX =~ ^([8-9][0-9]?|100)$ ]]; then
+                        echo 'The highest duty cycle threshold must be an integer between 80 and 100.'
+                        exit 1
+                    fi
+                    ;;
+                f)
+                    SKIP_THERMAL=1
+                    ;;
+                F)
+                    TIME_STARTUP="$OPTARG"
+                    if [[ ! $TIME_STARTUP =~ ^[0-9]+$ ]]; then
+                        echo 'The time to run the fan at full speed during startup must be an integer.'
+                        exit 1
+                    fi
+                    ;;
+                h)
+                    usage
+                    exit 0
+                    ;;
+                l)
+                    TIME_LOOP="$OPTARG"
+                    if [[ ! $TIME_LOOP =~ ^[0-9]+$ ]]; then
+                        echo 'The time to loop thermal reads must be an integer.'
+                        exit 1
+                    fi
+                    ;;
+                m)
+                    MONIT_DEVICE="$OPTARG"
+                    ;;
+                p)
+                    PERIOD="$OPTARG"
+                    if [[ ! $PERIOD =~ ^[0-9]+$ ]]; then
+                        echo 'The period must be an integer.'
+                        exit 1
+                    fi
+                    ;;
+                s)
+                    TEMPS_SIZE="$OPTARG"
+                    if [[ ! $TEMPS_SIZE =~ ^[0-9]+$ ]]; then
+                        echo 'The max size of the temperature array must be an integer.'
+                        exit 1
+                    fi
+                    ;;
+                t)
+                    THERMAL_ABS_THRESH_LOW="$OPTARG"
+                    if [[ ! $THERMAL_ABS_THRESH_LOW =~ ^[0-4][0-9]?$ ]]; then
+                        echo 'The lowest temperature threshold must be an integer between 0 and 49.'
+                        exit 1
+                    fi
+                    ;;
+                T)
+                    THERMAL_ABS_THRESH_HIGH="$OPTARG"
+                    if [[ ! $THERMAL_ABS_THRESH_HIGH =~ ^([5-9][0-9]?|1[0-1][0-9]?|120)$ ]]; then
+                        echo 'The highest temperature threshold must be an integer between 50 and 120.'
+                        exit 1
+                    fi
+                    ;;
+                \?)
+                    echo '!! ATTENTION !!' 
+                    echo '................................'
+                    echo 'Detected an invalid option.'
+                    echo 'Try: '"$0"' -h'
+                    echo '................................'
+                    exit 1
+                    ;;
+            esac
+        done
+        
+        start
+        trap 'interrupt' SIGINT SIGHUP SIGTERM SIGKILL
+        config
+        fan_run
