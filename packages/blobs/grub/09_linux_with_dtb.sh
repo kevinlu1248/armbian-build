@@ -236,28 +236,41 @@ EOF
 }
 
 machine=$(uname -m)
+
+handle_x86_x86_64() {
+	list=
+	for i in /boot/vmlinuz-* /vmlinuz-* /boot/kernel-*; do
+		if grub_file_is_not_garbage "$i"; then list="$list $i"; fi
+	done
+}
+
+handle_other() {
+	list=
+	for i in /boot/vmlinuz-* /boot/vmlinux-* /vmlinuz-* /vmlinux-* /boot/kernel-*; do
+		if grub_file_is_not_garbage "$i"; then list="$list $i"; fi
+	done
+}
+
 case "x$machine" in
 	xi?86 | xx86_64)
-		list=
-		for i in /boot/vmlinuz-* /vmlinuz-* /boot/kernel-*; do
-			if grub_file_is_not_garbage "$i"; then list="$list $i"; fi
-		done
+		handle_x86_x86_64
 		;;
 	*)
-		list=
-		for i in /boot/vmlinuz-* /boot/vmlinux-* /vmlinuz-* /vmlinux-* /boot/kernel-*; do
-			if grub_file_is_not_garbage "$i"; then list="$list $i"; fi
-		done
+		handle_other
 		;;
 esac
 
-case "$machine" in
-	i?86) GENKERNEL_ARCH="x86" ;;
-	mips | mips64) GENKERNEL_ARCH="mips" ;;
-	mipsel | mips64el) GENKERNEL_ARCH="mipsel" ;;
-	arm*) GENKERNEL_ARCH="arm" ;;
-	*) GENKERNEL_ARCH="$machine" ;;
-esac
+set_genkernel_arch() {
+	case "$machine" in
+		i?86) GENKERNEL_ARCH="x86" ;;
+		mips | mips64) GENKERNEL_ARCH="mips" ;;
+		mipsel | mips64el) GENKERNEL_ARCH="mipsel" ;;
+		arm*) GENKERNEL_ARCH="arm" ;;
+		*) GENKERNEL_ARCH="$machine" ;;
+	esac
+}
+
+set_genkernel_arch
 
 prepare_boot_cache=
 prepare_root_cache=
@@ -399,26 +412,26 @@ while [ "x$list" != "x" ]; do
 	if test -z "${initramfs}" && test -z "${initrd_real}"; then
 		# "UUID=" and "ZFS=" magic is parsed by initrd or initramfs.  Since there's
 		# no initrd or builtin initramfs, it can't work here.
-		if [ "x${GRUB_DEVICE_PARTUUID}" = "x" ] ||
-			[ "x${GRUB_DISABLE_LINUX_PARTUUID}" = "xtrue" ]; then
-
-			linux_root_device_thisversion=${GRUB_DEVICE}
-		else
-			linux_root_device_thisversion=PARTUUID=${GRUB_DEVICE_PARTUUID}
-		fi
+  if [ -z "${GRUB_DEVICE_PARTUUID}" ] ||
+  			[ "${GRUB_DISABLE_LINUX_PARTUUID}" = "true" ]; then
+  
+  			linux_root_device_thisversion=${GRUB_DEVICE}
+  		else
+  			linux_root_device_thisversion=PARTUUID=${GRUB_DEVICE_PARTUUID}
+  		fi
 	fi
 
 	# The GRUB_DISABLE_SUBMENU option used to be different than others since it was
 	# mentioned in the documentation that has to be set to 'y' instead of 'true' to
 	# enable it. This caused a lot of confusion to users that set the option to 'y',
 	# 'yes' or 'true'. This was fixed but all of these values must be supported now.
-	if [ "x${GRUB_DISABLE_SUBMENU}" = xyes ] || [ "x${GRUB_DISABLE_SUBMENU}" = xy ]; then
-		GRUB_DISABLE_SUBMENU="true"
-	fi
-
-	if [ "x$is_top_level" = xtrue ] && [ "x${GRUB_DISABLE_SUBMENU}" != xtrue ]; then
-		linux_entry "${OS}" "${version}" simple \
-			"${GRUB_CMDLINE_LINUX} ${GRUB_CMDLINE_LINUX_DEFAULT}"
+ if [ "${GRUB_DISABLE_SUBMENU}" = "yes" ] || [ "${GRUB_DISABLE_SUBMENU}" = "y" ]; then
+ 		GRUB_DISABLE_SUBMENU="true"
+ 	fi
+ 
+ 	if [ "$is_top_level" = "true" ] && [ "${GRUB_DISABLE_SUBMENU}" != "true" ]; then
+ 		linux_entry "${OS}" "${version}" simple \
+ 			"${GRUB_CMDLINE_LINUX} ${GRUB_CMDLINE_LINUX_DEFAULT}"
 
 		submenu_indentation="$grub_tab"
 
@@ -439,10 +452,10 @@ while [ "x$list" != "x" ]; do
 				"${GRUB_CMDLINE_LINUX} ${GRUB_CMDLINE_LINUX_DEFAULT} init=${init_path}"
 		fi
 	done
-	if [ "x${GRUB_DISABLE_RECOVERY}" != "xtrue" ]; then
-		linux_entry "${OS}" "${version}" recovery \
-			"${GRUB_CMDLINE_LINUX_RECOVERY} ${GRUB_CMDLINE_LINUX}"
-	fi
+	if [ "${GRUB_DISABLE_RECOVERY}" != "true" ]; then
+			linux_entry "${OS}" "${version}" recovery \
+				"${GRUB_CMDLINE_LINUX_RECOVERY} ${GRUB_CMDLINE_LINUX}"
+		fi
 
 	list=$(echo $list | tr ' ' '\n' | fgrep -vx "$linux" | tr '\n' ' ')
 done
