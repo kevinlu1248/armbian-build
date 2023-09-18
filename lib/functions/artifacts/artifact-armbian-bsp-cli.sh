@@ -167,7 +167,7 @@ function artifact_armbian-bsp-cli_needs_transitional_package() {
 		return 0
 	elif [[ "${BRANCH}" == "current" ]]; then
 		return 0
-	elif [[ "${KERNEL_TARGET}" != *current* && "${BRANCH}" == "legacy" ]]; then
+	elif [[ "${KERNEL_TARGET}" != "current" && "${BRANCH}" == "legacy" ]]; then
 		return 0
 	else
 		return 1
