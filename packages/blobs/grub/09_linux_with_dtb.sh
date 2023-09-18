@@ -40,7 +40,7 @@ export TEXTDOMAINDIR="${datarootdir}/locale"
 CLASS="--class gnu-linux --class gnu --class os"
 SUPPORTED_INITS="sysvinit:/lib/sysvinit/init systemd:/lib/systemd/systemd upstart:/sbin/upstart"
 
-if [ "x${GRUB_DISTRIBUTOR}" = "x" ]; then
+if [ -z "${GRUB_DISTRIBUTOR}" ]; then
 	OS=GNU/Linux
 else
 	case ${GRUB_DISTRIBUTOR} in
@@ -73,15 +73,15 @@ GRUB_DISABLE_LINUX_PARTUUID=${GRUB_DISABLE_LINUX_PARTUUID-true}
 
 # btrfs may reside on multiple devices. We cannot pass them as value of root= parameter
 # and mounting btrfs requires user space scanning, so force UUID in this case.
-if ([ "x${GRUB_DEVICE_UUID}" = "x" ] && [ "x${GRUB_DEVICE_PARTUUID}" = "x" ]) ||
-	([ "x${GRUB_DISABLE_LINUX_UUID}" = "xtrue" ] &&
-		[ "x${GRUB_DISABLE_LINUX_PARTUUID}" = "xtrue" ]) ||
+if ([ -z "${GRUB_DEVICE_UUID}" ] && [ -z "${GRUB_DEVICE_PARTUUID}" ]) ||
+	([ "${GRUB_DISABLE_LINUX_UUID}" = "true" ] &&
+		[ "${GRUB_DISABLE_LINUX_PARTUUID}" = "true" ]) ||
 	(! test -e "/dev/disk/by-uuid/${GRUB_DEVICE_UUID}" &&
 		! test -e "/dev/disk/by-partuuid/${GRUB_DEVICE_PARTUUID}") ||
 	(test -e "${GRUB_DEVICE}" && uses_abstraction "${GRUB_DEVICE}" lvm); then
 	LINUX_ROOT_DEVICE=${GRUB_DEVICE}
-elif [ "x${GRUB_DEVICE_UUID}" = "x" ] ||
-	[ "x${GRUB_DISABLE_LINUX_UUID}" = "xtrue" ]; then
+elif [ -z "${GRUB_DEVICE_UUID}" ] ||
+	[ "${GRUB_DISABLE_LINUX_UUID}" = "true" ]; then
 	LINUX_ROOT_DEVICE=PARTUUID=${GRUB_DEVICE_PARTUUID}
 else
 	LINUX_ROOT_DEVICE=UUID=${GRUB_DEVICE_UUID}
@@ -161,13 +161,13 @@ linux_entry() {
 
 	# Use ELILO's generic "efifb" when it's known to be available.
 	# FIXME: We need an interface to select vesafb in case efifb can't be used.
-	if [ "x$GRUB_GFXPAYLOAD_LINUX" = x ]; then
-		echo "	load_video" | sed "s/^/$submenu_indentation/"
-	else
-		if [ "x$GRUB_GFXPAYLOAD_LINUX" != xtext ]; then
+	if [ -z "$GRUB_GFXPAYLOAD_LINUX" ]; then
 			echo "	load_video" | sed "s/^/$submenu_indentation/"
+		else
+			if [ "$GRUB_GFXPAYLOAD_LINUX" != "text" ]; then
+				echo "	load_video" | sed "s/^/$submenu_indentation/"
+			fi
 		fi
-	fi
 	if ([ "$ubuntu_recovery" = 0 ] || [ x$type != xrecovery ]) &&
 		([ "x$GRUB_GFXPAYLOAD_LINUX" != x ] || [ "$gfxpayload_dynamic" = 1 ]); then
 		echo "	gfxmode \$linux_gfx_mode" | sed "s/^/$submenu_indentation/"
@@ -283,7 +283,7 @@ EOF
 
 # Use ELILO's generic "efifb" when it's known to be available.
 # FIXME: We need an interface to select vesafb in case efifb can't be used.
-if [ "x$GRUB_GFXPAYLOAD_LINUX" != x ] || [ "$gfxpayload_dynamic" = 0 ]; then
+if [ -z "$GRUB_GFXPAYLOAD_LINUX" ] || [ "$gfxpayload_dynamic" = 0 ]; then
 	echo "set linux_gfx_mode=$GRUB_GFXPAYLOAD_LINUX"
 else
 	cat << EOF
@@ -315,7 +315,7 @@ EOF
 submenu_indentation=""
 
 is_top_level=true
-while [ "x$list" != "x" ]; do
+while [ -n "$list" ]; do
 	linux=$(version_find_latest $list)
 	case $linux in
 		*.efi.signed)
@@ -399,58 +399,58 @@ while [ "x$list" != "x" ]; do
 	if test -z "${initramfs}" && test -z "${initrd_real}"; then
 		# "UUID=" and "ZFS=" magic is parsed by initrd or initramfs.  Since there's
 		# no initrd or builtin initramfs, it can't work here.
-		if [ "x${GRUB_DEVICE_PARTUUID}" = "x" ] ||
-			[ "x${GRUB_DISABLE_LINUX_PARTUUID}" = "xtrue" ]; then
-
-			linux_root_device_thisversion=${GRUB_DEVICE}
-		else
-			linux_root_device_thisversion=PARTUUID=${GRUB_DEVICE_PARTUUID}
+				if [ -z "${GRUB_DEVICE_PARTUUID}" ] ||
+					[ "${GRUB_DISABLE_LINUX_PARTUUID}" = "true" ]; then
+		
+					linux_root_device_thisversion=${GRUB_DEVICE}
+				else
+					linux_root_device_thisversion=PARTUUID=${GRUB_DEVICE_PARTUUID}
+				fi
+			fi
+		
+			# The GRUB_DISABLE_SUBMENU option used to be different than others since it was
+			# mentioned in the documentation that has to be set to 'y' instead of 'true' to
+			# enable it. This caused a lot of confusion to users that set the option to 'y',
+			# 'yes' or 'true'. This was fixed but all of these values must be supported now.
+			if [ "${GRUB_DISABLE_SUBMENU}" = "yes" ] || [ "${GRUB_DISABLE_SUBMENU}" = "y" ]; then
+				GRUB_DISABLE_SUBMENU="true"
+			fi
+		
+			if [ "$is_top_level" = "true" ] && [ "${GRUB_DISABLE_SUBMENU}" != "true" ]; then
+				linux_entry "${OS}" "${version}" simple \
+					"${GRUB_CMDLINE_LINUX} ${GRUB_CMDLINE_LINUX_DEFAULT}"
+		
+				submenu_indentation="$grub_tab"
+		
+				if [ -z "$boot_device_id" ]; then
+					boot_device_id="$(grub_get_device_id "${GRUB_DEVICE}")"
+				fi
+				# TRANSLATORS: %s is replaced with an OS name
+				echo "submenu '$(gettext_printf "Advanced options for %s" "${OS}" | grub_quote)' \$menuentry_id_option 'gnulinux-advanced-$boot_device_id' {"
+				is_top_level=false
+			fi
+		
+			linux_entry "${OS}" "${version}" advanced \
+				"${GRUB_CMDLINE_LINUX} ${GRUB_CMDLINE_LINUX_DEFAULT}"
+			for supported_init in ${SUPPORTED_INITS}; do
+				init_path="${supported_init#*:}"
+				if [ -x "${init_path}" ] && [ "$(readlink -f /sbin/init)" != "$(readlink -f "${init_path}")" ]; then
+					linux_entry "${OS}" "${version}" "init-${supported_init%%:*}" \
+						"${GRUB_CMDLINE_LINUX} ${GRUB_CMDLINE_LINUX_DEFAULT} init=${init_path}"
+				fi
+			done
+			if [ "${GRUB_DISABLE_RECOVERY}" != "true" ]; then
+				linux_entry "${OS}" "${version}" recovery \
+					"${GRUB_CMDLINE_LINUX_RECOVERY} ${GRUB_CMDLINE_LINUX}"
+			fi
+		
+			list=$(echo $list | tr ' ' '\n' | fgrep -vx "$linux" | tr '\n' ' ')
+		done
+		
+		# If at least one kernel was found, then we need to
+		# add a closing '}' for the submenu command.
+		if [ "$is_top_level" != "true" ]; then
+			echo '}'
 		fi
-	fi
-
-	# The GRUB_DISABLE_SUBMENU option used to be different than others since it was
-	# mentioned in the documentation that has to be set to 'y' instead of 'true' to
-	# enable it. This caused a lot of confusion to users that set the option to 'y',
-	# 'yes' or 'true'. This was fixed but all of these values must be supported now.
-	if [ "x${GRUB_DISABLE_SUBMENU}" = xyes ] || [ "x${GRUB_DISABLE_SUBMENU}" = xy ]; then
-		GRUB_DISABLE_SUBMENU="true"
-	fi
-
-	if [ "x$is_top_level" = xtrue ] && [ "x${GRUB_DISABLE_SUBMENU}" != xtrue ]; then
-		linux_entry "${OS}" "${version}" simple \
-			"${GRUB_CMDLINE_LINUX} ${GRUB_CMDLINE_LINUX_DEFAULT}"
-
-		submenu_indentation="$grub_tab"
-
-		if [ -z "$boot_device_id" ]; then
-			boot_device_id="$(grub_get_device_id "${GRUB_DEVICE}")"
-		fi
-		# TRANSLATORS: %s is replaced with an OS name
-		echo "submenu '$(gettext_printf "Advanced options for %s" "${OS}" | grub_quote)' \$menuentry_id_option 'gnulinux-advanced-$boot_device_id' {"
-		is_top_level=false
-	fi
-
-	linux_entry "${OS}" "${version}" advanced \
-		"${GRUB_CMDLINE_LINUX} ${GRUB_CMDLINE_LINUX_DEFAULT}"
-	for supported_init in ${SUPPORTED_INITS}; do
-		init_path="${supported_init#*:}"
-		if [ -x "${init_path}" ] && [ "$(readlink -f /sbin/init)" != "$(readlink -f "${init_path}")" ]; then
-			linux_entry "${OS}" "${version}" "init-${supported_init%%:*}" \
-				"${GRUB_CMDLINE_LINUX} ${GRUB_CMDLINE_LINUX_DEFAULT} init=${init_path}"
-		fi
-	done
-	if [ "x${GRUB_DISABLE_RECOVERY}" != "xtrue" ]; then
-		linux_entry "${OS}" "${version}" recovery \
-			"${GRUB_CMDLINE_LINUX_RECOVERY} ${GRUB_CMDLINE_LINUX}"
-	fi
-
-	list=$(echo $list | tr ' ' '\n' | fgrep -vx "$linux" | tr '\n' ' ')
-done
-
-# If at least one kernel was found, then we need to
-# add a closing '}' for the submenu command.
-if [ x"$is_top_level" != xtrue ]; then
-	echo '}'
-fi
-
-echo "$title_correction_code"
+		
+		echo "$title_correction_code"
