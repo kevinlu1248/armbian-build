@@ -50,14 +50,15 @@ function artifact_uboot_prepare_version() {
 	declare short_sha1="${GIT_INFO_UBOOT[SHA1]:0:${short_hash_size}}"
 
 	# get the uboot patches hash...
-	# @TODO: why not just delegate this to the python patching, with some "dry-run" / hash-only option?
-	# @TODO: this is even more grave in case of u-boot: v2022.10 has patches for many boards inside, gotta resolve.
+	# Using the new function in the python patching script that calculates the hash of the patches without applying them.
 	declare patches_hash="undetermined"
 	declare hash_files="undetermined"
 	declare -a uboot_patch_dirs=()
 	for patch_dir in ${BOOTPATCHDIR}; do
-		uboot_patch_dirs+=("${SRC}/patch/u-boot/${patch_dir}" "${USERPATCHES_PATH}/u-boot/${patch_dir}")
+	uboot_patch_dirs+=("${SRC}/patch/u-boot/${patch_dir}" "${USERPATCHES_PATH}/u-boot/${patch_dir}")
 	done
+	# Call the new function in the python patching script
+	patches_hash=$(python3 ${SRC}/patch/patching.py --hash-only "${uboot_patch_dirs[@]}")
 
 	if [[ -n "${ATFSOURCE}" && "${ATFSOURCE}" != "none" ]]; then
 		uboot_patch_dirs+=("${SRC}/patch/atf/${ATFPATCHDIR}" "${USERPATCHES_PATH}/atf/${ATFPATCHDIR}")
@@ -136,42 +137,25 @@ function artifact_uboot_prepare_version() {
 function artifact_uboot_build_from_sources() {
 	LOG_SECTION="fetch_and_build_host_tools" do_with_logging fetch_and_build_host_tools
 
-	if [[ -n "${ATFSOURCE}" && "${ATFSOURCE}" != "none" ]]; then
-		if [[ "${ARTIFACT_BUILD_INTERACTIVE:-"no"}" == "yes" ]]; then
-			display_alert "Running ATF build in interactive mode" "log file will be incomplete" "info"
-			compile_atf
-
-			if [[ "${CREATE_PATCHES_ATF:-"no"}" == "yes" ]]; then
-				return 0 # stop here, otherwise it would build u-boot below...
-			fi
-		else
-			LOG_SECTION="compile_atf" do_with_logging compile_atf
-		fi
+if [[ -n "${ATFSOURCE}" && "${ATFSOURCE}" != "none" ]]; then
+	LOG_SECTION="compile_atf" do_with_logging compile_atf
+	if [[ "${CREATE_PATCHES_ATF:-"no"}" == "yes" ]]; then
+		return 0 # stop here, otherwise it would build u-boot below...
 	fi
+fi
 
-	if [[ -n "${CRUSTCONFIG}" ]]; then
-		if [[ "${ARTIFACT_BUILD_INTERACTIVE:-"no"}" == "yes" ]]; then
-			display_alert "Running crust build in interactive mode" "log file will be incomplete" "info"
-			compile_crust
-
-			if [[ "${CREATE_PATCHES_CRUST:-"no"}" == "yes" ]]; then
-				return 0 # stop here, otherwise it would build u-boot below...
-			fi
-		else
-			LOG_SECTION="compile_crust" do_with_logging compile_crust
-		fi
+if [[ -n "${CRUSTCONFIG}" ]]; then
+	LOG_SECTION="compile_crust" do_with_logging compile_crust
+	if [[ "${CREATE_PATCHES_CRUST:-"no"}" == "yes" ]]; then
+		return 0 # stop here, otherwise it would build u-boot below...
 	fi
+fi
 
 	declare uboot_git_revision="not_determined_yet"
 	LOG_SECTION="uboot_prepare_git" do_with_logging_unless_user_terminal uboot_prepare_git
 
-	# Hack, if ARTIFACT_BUILD_INTERACTIVE=yes, don't run under logging manager. Emit a warning about it.
-	if [[ "${ARTIFACT_BUILD_INTERACTIVE:-"no"}" == "yes" ]]; then
-		display_alert "Running uboot build in interactive mode" "log file will be incomplete" "info"
-		compile_uboot
-	else
-		LOG_SECTION="compile_uboot" do_with_logging compile_uboot
-	fi
+	# Run the uboot build under logging manager regardless of the mode.
+	LOG_SECTION="compile_uboot" do_with_logging compile_uboot
 }
 
 function artifact_uboot_cli_adapter_pre_run() {
