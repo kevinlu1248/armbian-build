@@ -104,18 +104,18 @@ function compile_armbian-base-files() {
 		run_tool_batcat --file-name "${artifact_name}/DEBIAN/conffiles" "${destination}/DEBIAN/conffiles"
 	fi
 
-	# Let's hack at it. New Maintainer and Version...
-	cat <<- EOD >> "${destination}/DEBIAN/control.new"
-		Maintainer: $MAINTAINER <$MAINTAINERMAIL>
-		Version: ${artifact_version}
-	EOD
-	# Keep everything else from original
-	cat "${destination}/DEBIAN/control" | grep -vP '^(Maintainer|Version):' >> "${destination}/DEBIAN/control.new"
+# Let's hack at it. New Maintainer and Version...
+cat <<- EOD >> "${destination}/DEBIAN/control.new"
+	Maintainer: $MAINTAINER <$MAINTAINERMAIL>
+	Version: ${artifact_version}
+EOD
+# Keep everything else from original
+cat "${destination}/DEBIAN/control" | grep -vP '^(Maintainer|Version):' >> "${destination}/DEBIAN/control.new"
 
-	# Replace 'Debian' with 'Armbian'.
-	sed -i "s/Debian/${VENDOR}/g" "${destination}/DEBIAN/control.new"
+# Replace 'Debian' with 'Armbian'.
+python -c "import fileinput, sys; [sys.stdout.write(line.replace('Debian', '${VENDOR}')) for line in fileinput.input('${destination}/DEBIAN/control.new', inplace=True)]"
 
-	mv "${destination}/DEBIAN/control.new" "${destination}/DEBIAN/control"
+mv "${destination}/DEBIAN/control.new" "${destination}/DEBIAN/control"
 
 	# Change etc/os-release, etc/issue, etc/issue.net, and DEBIAN/conffiles
 
@@ -128,26 +128,26 @@ function compile_armbian-base-files() {
 	# Attention: this is just a few base changes that don't involve "$REVISION".
 	# More are done in reversion_armbian-base-files_deb_contents()
 	cat <<- EOD >> "${destination}/etc/dpkg/origins/armbian"
-		Vendor: ${VENDOR}
-		Vendor-URL: ${VENDORURL}
-		Bugs: ${VENDORBUGS}
-		Parent: ${DISTRIBUTION}
+	Vendor: ${VENDOR}
+	Vendor-URL: ${VENDORURL}
+	Bugs: ${VENDORBUGS}
+	Parent: ${DISTRIBUTION}
 	EOD
-	sed -i "s|^HOME_URL=.*|HOME_URL=\"${VENDORURL}\"|" "${destination}"/etc/os-release
-	sed -i "s|^SUPPORT_URL=.*|SUPPORT_URL=\"${VENDORSUPPORT}\"|" "${destination}"/etc/os-release
-	sed -i "s|^BUG_REPORT_URL=.*|BUG_REPORT_URL=\"${VENDORBUGS}\"|" "${destination}"/etc/os-release
-	sed -i "s|^PRIVACY_POLICY_URL=.*|PRIVACY_POLICY_URL=\"${VENDORPRIVACY}\"|" "${destination}"/etc/os-release
-	sed -i "s|^LOGO=.*|LOGO=\"${VENDORLOGO}\"|" "${destination}"/etc/os-release
+	python -c "import fileinput, sys; [sys.stdout.write(line.replace('HOME_URL=.*', 'HOME_URL=\"${VENDORURL}\"')) for line in fileinput.input('${destination}/etc/os-release', inplace=True)]"
+	python -c "import fileinput, sys; [sys.stdout.write(line.replace('SUPPORT_URL=.*', 'SUPPORT_URL=\"${VENDORSUPPORT}\"')) for line in fileinput.input('${destination}/etc/os-release', inplace=True)]"
+	python -c "import fileinput, sys; [sys.stdout.write(line.replace('BUG_REPORT_URL=.*', 'BUG_REPORT_URL=\"${VENDORBUGS}\"')) for line in fileinput.input('${destination}/etc/os-release', inplace=True)]"
+	python -c "import fileinput, sys; [sys.stdout.write(line.replace('PRIVACY_POLICY_URL=.*', 'PRIVACY_POLICY_URL=\"${VENDORPRIVACY}\"')) for line in fileinput.input('${destination}/etc/os-release', inplace=True)]"
+	python -c "import fileinput, sys; [sys.stdout.write(line.replace('LOGO=.*', 'LOGO=\"${VENDORLOGO}\"')) for line in fileinput.input('${destination}/etc/os-release', inplace=True)]"
 
 	# Remove content from motd: Ubuntu header, welcome text and news. We have our own
 	rm -f "${destination}"/etc/update-motd.d/00-header
-	sed -i "\/etc\/update-motd.d\/00-header/d" "${destination}/DEBIAN/conffiles"
+	python -c "import fileinput, sys; [sys.stdout.write(line.replace('/etc/update-motd.d/00-header', '')) for line in fileinput.input('${destination}/DEBIAN/conffiles', inplace=True)]"
 	rm -f "${destination}"/etc/update-motd.d/10-help-text
-	sed -i "\/etc\/update-motd.d\/10-help-text/d" "${destination}/DEBIAN/conffiles"
+	python -c "import fileinput, sys; [sys.stdout.write(line.replace('/etc/update-motd.d/10-help-text', '')) for line in fileinput.input('${destination}/DEBIAN/conffiles', inplace=True)]"
 	rm -f "${destination}"/etc/update-motd.d/10-uname
-	sed -i "\/etc\/update-motd.d\/10-uname/d" "${destination}/DEBIAN/conffiles"
+	python -c "import fileinput, sys; [sys.stdout.write(line.replace('/etc/update-motd.d/10-uname', '')) for line in fileinput.input('${destination}/DEBIAN/conffiles', inplace=True)]"
 	rm -f "${destination}"/etc/update-motd.d/50-motd-news
-	sed -i "\/etc\/update-motd.d\/50-motd-news/d" "${destination}/DEBIAN/conffiles"
+	python -c "import fileinput, sys; [sys.stdout.write(line.replace('/etc/update-motd.d/50-motd-news', '')) for line in fileinput.input('${destination}/DEBIAN/conffiles', inplace=True)]"
 
 	# Remove Ubuntu default services
 	[[ -f "${destination}"/lib/systemd/motd-news.service ]] && rm "${destination}"/lib/systemd/motd-news.service
@@ -197,7 +197,7 @@ function reversion_armbian-base-files_deb_contents() {
 	echo "ARMBIAN_PRETTY_NAME=\"${VENDOR} ${REVISION} ${orig_distro_release}\"" >> "${data_dir}"/etc/os-release
 	echo -e "${VENDOR} ${REVISION} ${orig_distro_release} \\l \n" > "${data_dir}"/etc/issue
 	echo -e "${VENDOR} ${REVISION} ${orig_distro_release}" > "${data_dir}"/etc/issue.net
-	sed -i "s/^PRETTY_NAME=.*/PRETTY_NAME=\"${VENDOR} $REVISION ${orig_distro_release}\"/" "${data_dir}"/etc/os-release
+	python -c "import fileinput, sys; [sys.stdout.write(line.replace('PRETTY_NAME=.*', 'PRETTY_NAME=\"${VENDOR} $REVISION ${orig_distro_release}\"')) for line in fileinput.input('${data_dir}/etc/os-release', inplace=True)]"
 
 	# Show results if debugging
 	if [[ "${SHOW_DEBUG}" == "yes" ]]; then
