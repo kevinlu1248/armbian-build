@@ -104,18 +104,18 @@ function compile_armbian-base-files() {
 		run_tool_batcat --file-name "${artifact_name}/DEBIAN/conffiles" "${destination}/DEBIAN/conffiles"
 	fi
 
-	# Let's hack at it. New Maintainer and Version...
-	cat <<- EOD >> "${destination}/DEBIAN/control.new"
-		Maintainer: $MAINTAINER <$MAINTAINERMAIL>
-		Version: ${artifact_version}
-	EOD
-	# Keep everything else from original
-	cat "${destination}/DEBIAN/control" | grep -vP '^(Maintainer|Version):' >> "${destination}/DEBIAN/control.new"
+# Directly compare and update Maintainer and Version
+cat <<- EOD >> "${destination}/DEBIAN/control.new"
+	Maintainer: $MAINTAINER <$MAINTAINERMAIL>
+	Version: ${artifact_version}
+EOD
+# Keep everything else from original
+cat "${destination}/DEBIAN/control" | grep -vP '^(Maintainer|Version):' >> "${destination}/DEBIAN/control.new"
 
-	# Replace 'Debian' with 'Armbian'.
-	sed -i "s/Debian/${VENDOR}/g" "${destination}/DEBIAN/control.new"
+# Directly replace 'Debian' with 'Armbian'.
+sed -i "s/Debian/${VENDOR}/g" "${destination}/DEBIAN/control.new"
 
-	mv "${destination}/DEBIAN/control.new" "${destination}/DEBIAN/control"
+mv "${destination}/DEBIAN/control.new" "${destination}/DEBIAN/control"
 
 	# Change etc/os-release, etc/issue, etc/issue.net, and DEBIAN/conffiles
 
