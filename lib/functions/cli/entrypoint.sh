@@ -68,7 +68,7 @@ function cli_entrypoint() {
 	# Or: build under Darwin does docker...
 	# each _pre_run can change the command and vars to run too, so do it in a loop until it stops changing.
 	declare -g ARMBIAN_CHANGE_COMMAND_TO="${ARMBIAN_COMMAND}"
-	while [[ "${ARMBIAN_CHANGE_COMMAND_TO}" != "" ]]; do
+while [[ "${ARMBIAN_CHANGE_COMMAND_TO}" != "" ]]; do
 		display_alert "Still a command to pre-run, this time:" "${ARMBIAN_CHANGE_COMMAND_TO}" "debug"
 
 		declare -g ARMBIAN_COMMAND_REQUIRE_BASIC_DEPS="no" # reset this before every pre_run, so only the last one wins.
