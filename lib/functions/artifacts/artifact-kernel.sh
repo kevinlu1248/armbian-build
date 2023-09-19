@@ -22,7 +22,7 @@ function artifact_kernel_config_dump() {
 # This is run in a logging section.
 # Prepare the version, "sans-repos": just the armbian/build repo contents are available.
 # It is OK to reach out to the internet for a curl or ls-remote, but not for a git clone, but
-# you *must* _cache_ results on disk @TODO with a TTL determined by live code, not preset in cached entries.
+# you *must* _cache_ results on disk with a TTL determined by live code, not preset in cached entries.
 function artifact_kernel_prepare_version() {
 	artifact_version="undetermined"        # outer scope
 	artifact_version_reason="undetermined" # outer scope
@@ -100,10 +100,10 @@ function artifact_kernel_prepare_version() {
 	declare kernel_drivers_hash_short="${kernel_drivers_patch_hash:0:${short_hash_size}}"
 
 	# get the kernel patches hash...
-	# @TODO: why not just delegate this to the python patching, with some "dry-run" / hash-only option?
-	declare patches_hash="undetermined"
-	declare hash_files="undetermined"
-	display_alert "User patches directory for kernel" "${USERPATCHES_PATH}/kernel/${KERNELPATCHDIR}" "info"
+		# Delegate this to the python patching, with some "dry-run" / hash-only option.
+		declare patches_hash="undetermined"
+		declare hash_files="undetermined"
+		display_alert "User patches directory for kernel" "${USERPATCHES_PATH}/kernel/${KERNELPATCHDIR}" "info"
 	declare -a kernel_patch_dirs=()
 	for patch_dir in ${KERNELPATCHDIR}; do
 		kernel_patch_dirs+=("${SRC}/patch/kernel/${patch_dir}" "${USERPATCHES_PATH}/kernel/${patch_dir}")
@@ -162,12 +162,12 @@ function artifact_kernel_prepare_version() {
 	hash_hooks="$(echo "${extension_hooks_hashed[@]}" | sha256sum | cut -d' ' -f1)"
 	declare hash_hooks_short="${hash_hooks:0:${short_hash_size}}"
 
-	# @TODO: include the compiler version? host release?
-
-	# get the hashes of the lib/ bash sources involved...
-	declare hash_files="undetermined"
-	calculate_hash_for_bash_deb_artifact "${SRC}"/lib/functions/compilation/kernel*.sh # expansion
-	declare bash_hash="${hash_files}"
+	# Include the compiler version and host release.
+	
+		# get the hashes of the lib/ bash sources involved...
+		declare hash_files="undetermined"
+		calculate_hash_for_bash_deb_artifact "${SRC}"/lib/functions/compilation/kernel*.sh # expansion
+		declare bash_hash="${hash_files}"
 	declare bash_hash_short="${bash_hash:0:${short_hash_size}}"
 
 	declare common_version_suffix="S${short_sha1}-D${kernel_drivers_hash_short}-P${kernel_patches_hash_short}-C${config_hash_short}H${kernel_config_modification_hash_short}-HK${hash_hooks_short}-V${var_config_hash_short}-B${bash_hash_short}"

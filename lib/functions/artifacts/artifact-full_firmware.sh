@@ -9,7 +9,7 @@
 
 function artifact_full_firmware_config_dump() {
 	# artifact_input_variables: None, for firmware.
-	:
+	echo "No input variables for firmware."
 }
 
 function artifact_full_firmware_prepare_version() {
@@ -88,20 +88,37 @@ function artifact_full_firmware_cli_adapter_config_prep() {
 
 function artifact_full_firmware_get_default_oci_target() {
 	artifact_oci_target_base="${GHCR_SOURCE}/armbian/os/"
+	echo "Default OCI target for firmware: ${artifact_oci_target_base}"
 }
 
 function artifact_full_firmware_is_available_in_local_cache() {
-	is_artifact_available_in_local_cache
+	if is_artifact_available_in_local_cache; then
+		echo "Firmware artifact is available in local cache."
+	else
+		echo "Firmware artifact is not available in local cache."
+	fi
 }
 
 function artifact_full_firmware_is_available_in_remote_cache() {
-	is_artifact_available_in_remote_cache
+	if is_artifact_available_in_remote_cache; then
+		echo "Firmware artifact is available in remote cache."
+	else
+		echo "Firmware artifact is not available in remote cache."
+	fi
 }
 
 function artifact_full_firmware_obtain_from_remote_cache() {
-	obtain_artifact_from_remote_cache
+	if obtain_artifact_from_remote_cache; then
+		echo "Firmware artifact obtained from remote cache."
+	else
+		echo "Failed to obtain firmware artifact from remote cache."
+	fi
 }
 
 function artifact_full_firmware_deploy_to_remote_cache() {
-	upload_artifact_to_oci
+	if upload_artifact_to_oci; then
+		echo "Firmware artifact deployed to remote cache."
+	else
+		echo "Failed to deploy firmware artifact to remote cache."
+	fi
 }

@@ -353,7 +353,16 @@ function artifact_dump_json_info() {
 	done
 
 	display_alert "Dumping JSON" "for ${#ARTIFACTS_VAR_DICT[@]} variables" "ext"
-	python3 "${SRC}/lib/tools/configdump2json.py" "--args" "${ARTIFACTS_VAR_DICT[@]}" # to stdout
+	
+	# Create a JSON object
+	echo "{" > artifact_info.json
+	for key in "${!ARTIFACTS_VAR_DICT[@]}"; do
+		# Add each key-value pair to the JSON object
+		echo "\"$key\": \"${ARTIFACTS_VAR_DICT[$key]}\"," >> artifact_info.json
+	done
+	# Remove the trailing comma and close the JSON object
+	sed -i '$ s/.$//' artifact_info.json
+	echo "}" >> artifact_info.json
 }
 
 function dump_artifact_config() {
@@ -403,31 +412,28 @@ function pack_artifact_to_local_cache() {
 	fi
 }
 
+function check_missing_files() {
+	declare any_missing="no"
+	declare deb_name
+	for deb_name in "${artifact_map_debs[@]}"; do
+		declare new_name_full="${artifact_base_dir}/${deb_name}"
+		if [[ ! -f "${new_name_full}" ]]; then
+			display_alert "Unpacking artifact" "deb-tar: ${artifact_final_file_basename} missing: ${new_name_full}" "debug"
+			any_missing="yes"
+		fi
+	done
+	return "${any_missing}"
+}
+
 function unpack_artifact_from_local_cache() {
 	if [[ "${artifact_type}" == "deb-tar" ]]; then
-		declare any_missing="no"
-		declare deb_name
-		for deb_name in "${artifact_map_debs[@]}"; do
-			declare new_name_full="${artifact_base_dir}/${deb_name}"
-			if [[ ! -f "${new_name_full}" ]]; then
-				display_alert "Unpacking artifact" "deb-tar: ${artifact_final_file_basename} missing: ${new_name_full}" "debug"
-				any_missing="yes"
-			fi
-		done
+		check_missing_files
 		if [[ "${any_missing}" == "yes" ]]; then
 			display_alert "Unpacking artifact" "deb-tar: ${artifact_final_file_basename}" "info"
 			run_host_command_logged tar -C "${artifact_base_dir}" -xvf "${artifact_final_file}"
 		fi
 		# sanity check? did unpacking produce the expected files?
-		declare any_missing="no"
-		declare deb_name
-		for deb_name in "${artifact_map_debs[@]}"; do
-			declare new_name_full="${artifact_base_dir}/${deb_name}"
-			if [[ ! -f "${new_name_full}" ]]; then
-				display_alert "Unpacking artifact" "after unpack deb-tar: ${artifact_final_file_basename} missing: ${new_name_full}" "err"
-				any_missing="yes"
-			fi
-		done
+		check_missing_files
 		if [[ "${any_missing}" == "yes" ]]; then
 			display_alert "Files missing from deb-tar" "this is a bug, please report it. artifact_name: '${artifact_name}' artifact_version: '${artifact_version}'" "err"
 		fi
@@ -489,15 +495,7 @@ function is_artifact_available_in_local_cache() {
 	artifact_exists_in_local_cache="no" # outer scope
 
 	if [[ "${artifact_type}" == "deb-tar" ]]; then
-		declare any_missing="no"
-		declare deb_name
-		for deb_name in "${artifact_map_debs[@]}"; do
-			declare new_name_full="${artifact_base_dir}/${deb_name}"
-			if [[ ! -f "${new_name_full}" ]]; then
-				display_alert "Checking local cache" "deb-tar: ${artifact_final_file_basename} missing: ${new_name_full}" "debug"
-				any_missing="yes"
-			fi
-		done
+		check_missing_files
 		if [[ "${any_missing}" == "no" ]]; then
 			display_alert "Checking local cache" "deb-tar: ${artifact_final_file_basename} nothing missing" "debug"
 			artifact_exists_in_local_cache="yes" # outer scope

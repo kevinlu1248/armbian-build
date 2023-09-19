@@ -34,7 +34,7 @@ function standard_artifact_reversion_for_deployment() {
 		# since the full versioned path includes the original hash, if the file already exists, we can trust
 		# it's the correct one, and skip reversioning.
 		# do touch the file, so mtime reflects it is wanted, and later delete old files to keep junk under control
-		if [[ -f "${deb_versioned_full_path}" ]]; then
+		if [[ -f ${deb_versioned_full_path} ]]; then
 			display_alert "Skipping reversioning" "deb: ${deb_versioned_full_path} already exists" "debug"
 			run_host_command_logged touch "${deb_versioned_full_path}"
 			continue
@@ -43,7 +43,7 @@ function standard_artifact_reversion_for_deployment() {
 		declare artifact_mapped_deb="${artifact_map_debs["${one_artifact_deb_package}"]}"
 		declare hashed_storage_deb_full_path="${PACKAGES_HASHED_STORAGE}/${artifact_mapped_deb}"
 
-		if [[ ! -f "${hashed_storage_deb_full_path}" ]]; then
+		if [[ ! -f ${hashed_storage_deb_full_path} ]]; then
 			exit_with_error "hashed storage does not have ${hashed_storage_deb_full_path}"
 		fi
 
@@ -53,13 +53,13 @@ function standard_artifact_reversion_for_deployment() {
 		standard_artifact_reversion_for_deployment_one_deb "${@}"
 
 		# make sure reversioning produced the expected file
-		if [[ ! -f "${deb_versioned_full_path}" ]]; then
+		if [[ ! -f ${deb_versioned_full_path} ]]; then
 			exit_with_error "reversioning did not produce the expected file: ${deb_versioned_full_path}"
 		fi
 
 		# Unless KEEP_HASHED_DEB_ARTIFACTS=yes, get rid of the original packages-hashed file, since we don't need it anymore.
 		# KEEP_HASHED_DEB_ARTIFACTS=yes is set by 'download-artifact' CLI command.
-		if [[ "${KEEP_HASHED_DEB_ARTIFACTS}" != "yes" ]]; then
+		if [[ ${KEEP_HASHED_DEB_ARTIFACTS} != "yes" ]]; then
 			run_host_command_logged rm -fv "${hashed_storage_deb_full_path}"
 		else
 			display_alert "Keeping and touching hashed storage file" "KEEP_HASHED_DEB_ARTIFACTS=yes: ${hashed_storage_deb_full_path}" "info"
@@ -111,7 +111,7 @@ function standard_artifact_reversion_for_deployment_one_deb() {
 	declare control_file_new="${control_dir}/control.new"
 
 	# Replace "Version: " field with our own
-	sed -e "s/^Version: .*/Version: ${artifact_final_version_reversioned}/" "${control_file}" > "${control_file_new}"
+	sed -e "0,/^Version: .*/s//Version: ${artifact_final_version_reversioned}/" "${control_file}" > "${control_file_new}"
 	echo "Armbian-Original-Hash: ${artifact_version}" >> "${control_file_new}" # non-standard field.
 
 	for one_reversion_function_name in "${@}"; do
@@ -120,7 +120,7 @@ function standard_artifact_reversion_for_deployment_one_deb() {
 	done
 
 	# Show a nice diff using batcat if debugging
-	if [[ "${SHOW_DEBUG}" == "yes" ]]; then
+	if [[ ${SHOW_DEBUG} == "yes" ]]; then
 		diff -u "${control_file}" "${control_file_new}" > "${unpack_dir}/control.diff" || true
 		run_tool_batcat "${unpack_dir}/control.diff"
 	fi
@@ -134,7 +134,7 @@ function standard_artifact_reversion_for_deployment_one_deb() {
 	run_host_command_logged tar cf "${deb_contents_dir}/control.tar" .
 
 	# if it was compressed to begin with, recompress...
-	if [[ "${control_compressed}" == ".xz" ]]; then
+	if [[ ${control_compressed} == ".xz" ]]; then
 		run_host_command_logged xz "${deb_contents_dir}/control.tar"
 	fi
 
@@ -150,20 +150,25 @@ function standard_artifact_reversion_for_deployment_one_deb() {
 }
 
 function artifact_deb_reversion_unpack_data_deb() {
-	if [[ "${data_compressed}" == ".xz" ]]; then
+	if [[ ${data_compressed} == ".xz" && -f "${deb_contents_dir}/data.tar.xz" ]]; then
 		run_host_command_logged xz -d "${deb_contents_dir}/data.tar.xz" # decompress
 	fi
 
-	run_host_command_logged tar -xf "${deb_contents_dir}/data.tar" --directory="${data_dir}"
+	if [[ -f "${deb_contents_dir}/data.tar" ]]; then
+		run_host_command_logged tar -xf "${deb_contents_dir}/data.tar" --directory="${data_dir}"
+	fi
 }
 
 function artifact_deb_reversion_repack_data_deb() {
-	run_host_command_logged rm "${deb_contents_dir}/data.tar"
+	if [[ -f "${deb_contents_dir}/data.tar" ]]; then
+		run_host_command_logged rm "${deb_contents_dir}/data.tar"
+	fi
+
 	cd "${data_dir}" || exit_with_error "cray-cray about data_dir ${data_dir}"
 	run_host_command_logged tar cf "${deb_contents_dir}/data.tar" .
 
 	# if it was compressed to begin with, recompress...
-	if [[ "${data_compressed}" == ".xz" ]]; then
+	if [[ ${data_compressed} == ".xz" && -f "${deb_contents_dir}/data.tar" ]]; then
 		run_host_command_logged xz "${deb_contents_dir}/data.tar"
 	fi
 }
