@@ -20,35 +20,35 @@ function artifact_armbian-bsp-cli_prepare_version() {
 	artifact_version="undetermined"        # outer scope
 	artifact_version_reason="undetermined" # outer scope
 
-	declare short_hash_size=4
+	local short_hash_size=4
 
-	declare fake_unchanging_base_version="1"
+	local fake_unchanging_base_version="1"
 
 	# hash the contents of "post_family_tweaks_bsp" extension hooks (always) - use framework helper
 	# hash the contents of family_tweaks_bsp old-style hooks (if it exists)
-	declare -a hooks_to_hash=("$(dump_extension_method_sources_functions "post_family_tweaks_bsp")")
+	local -a hooks_to_hash=("$(dump_extension_method_sources_functions "post_family_tweaks_bsp")")
 	if [[ $(type -t family_tweaks_bsp) == function ]]; then
 		hooks_to_hash+=("$(declare -f "family_tweaks_bsp")")
 	fi
-	declare hash_hooks="undetermined"
+	local hash_hooks="undetermined"
 	hash_hooks="$(echo "${hooks_to_hash[@]}" | sha256sum | cut -d' ' -f1)"
-	declare hash_hooks_short="${hash_hooks:0:${short_hash_size}}"
+	local hash_hooks_short="${hash_hooks:0:short_hash_size}"
 
 	# get the bootscript info...
-	declare -A bootscript_info=()
+	local -A bootscript_info=()
 	get_bootscript_info # fills in bootscript_info array
 
 	# Hash variables/bootscripts that affect the contents of bsp-cli package.
 	# Those contain /armbian a lot, so don't normalize them.
-	declare -a vars_to_hash_no_normalize=(
+	local -a vars_to_hash_no_normalize=(
 		"bootscript_file_contents: ${bootscript_info[bootscript_file_contents]}"
 		"bootenv_file_contents: ${bootscript_info[bootenv_file_contents]}"
 	)
-	declare hash_variables="undetermined"                                                     # will be set by calculate_hash_for_variables(), but without normalization
+	local hash_variables="undetermined"                                                       # will be set by calculate_hash_for_variables(), but without normalization
 	do_normalize_src_path="no" calculate_hash_for_variables "${vars_to_hash_no_normalize[@]}" # don't normalize
-	declare hash_vars_no_normalize="${hash_variables}"
+	local hash_vars_no_normalize="${hash_variables}"
 
-	declare -a vars_to_hash=(
+	local -a vars_to_hash=(
 		"has_bootscript: ${bootscript_info[has_bootscript]}"
 		"has_extlinux: ${bootscript_info[has_extlinux]}"
 		"UBOOT_FW_ENV: ${UBOOT_FW_ENV}"                               # not included in bootscript
@@ -62,12 +62,12 @@ function artifact_armbian-bsp-cli_prepare_version() {
 		"VENDOR: ${VENDOR}"                                           # /etc/armbian-release
 		"hash_vars_no_normalize: ${hash_vars_no_normalize}"           # The non-normalized part, above
 	)
-	declare hash_variables="undetermined" # will be set by calculate_hash_for_variables(), which normalizes the input
+	local hash_variables="undetermined" # will be set by calculate_hash_for_variables(), which normalizes the input
 	calculate_hash_for_variables "${vars_to_hash[@]}"
-	declare vars_config_hash="${hash_variables}"
-	declare var_config_hash_short="${vars_config_hash:0:${short_hash_size}}"
+	local vars_config_hash="${hash_variables}"
+	local var_config_hash_short="${vars_config_hash:0:short_hash_size}"
 
-	declare -a dirs_to_hash=(
+	local -a dirs_to_hash=(
 		"${SRC}/packages/bsp/common" # common stuff
 		"${SRC}/packages/bsp-cli"
 		"${SRC}/config/optional/_any_board/_packages/bsp-cli"
@@ -75,21 +75,21 @@ function artifact_armbian-bsp-cli_prepare_version() {
 		"${SRC}/config/optional/families/${LINUXFAMILY}/_packages/bsp-cli"
 		"${SRC}/config/optional/boards/${BOARD}/_packages/bsp-cli"
 	)
-	declare hash_files="undetermined"
+	local hash_files="undetermined"
 	calculate_hash_for_all_files_in_dirs "${dirs_to_hash[@]}"
 	packages_config_hash="${hash_files}"
-	declare packages_config_hash_short="${packages_config_hash:0:${short_hash_size}}"
+	local packages_config_hash_short="${packages_config_hash:0:short_hash_size}"
 
 	# get the hashes of the lib/ bash sources involved...
-	declare hash_files="undetermined"
+	local hash_files="undetermined"
 	calculate_hash_for_bash_deb_artifact "bsp/armbian-bsp-cli-deb.sh"
-	declare bash_hash="${hash_files}"
-	declare bash_hash_short="${bash_hash:0:${short_hash_size}}"
+	local bash_hash="${hash_files}"
+	local bash_hash_short="${bash_hash:0:short_hash_size}"
 
 	# outer scope
 	artifact_version="${fake_unchanging_base_version}-PC${packages_config_hash_short}-V${var_config_hash_short}-H${hash_hooks_short}-B${bash_hash_short}"
 
-	declare -a reasons=(
+	local -a reasons=(
 		"Armbian package armbian-bsp-cli"
 		"BOARD \"${BOARD}\""
 		"BRANCH \"${BRANCH}\""
@@ -163,11 +163,11 @@ function artifact_armbian-bsp-cli_deploy_to_remote_cache() {
 }
 
 function artifact_armbian-bsp-cli_needs_transitional_package() {
-	if [[ "${KERNEL_TARGET}" == "${BRANCH}" ]]; then
+	if [[ ${KERNEL_TARGET} == "${BRANCH}" ]]; then
 		return 0
-	elif [[ "${BRANCH}" == "current" ]]; then
+	elif [[ ${BRANCH} == "current" ]]; then
 		return 0
-	elif [[ "${KERNEL_TARGET}" != *current* && "${BRANCH}" == "legacy" ]]; then
+	elif [[ ${KERNEL_TARGET} != *current* && ${BRANCH} == "legacy" ]]; then
 		return 0
 	else
 		return 1
