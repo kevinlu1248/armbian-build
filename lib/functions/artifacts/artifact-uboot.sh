@@ -20,18 +20,6 @@ function artifact_uboot_prepare_version() {
 	artifact_version="undetermined"        # outer scope
 	artifact_version_reason="undetermined" # outer scope
 
-	# Prepare the version, "sans-repos": just the armbian/build repo contents are available.
-	# It is OK to reach out to the internet for a curl or ls-remote, but not for a git clone/fetch.
-
-	# - Given BOOTSOURCE and BOOTBRANCH, get:
-	#    - SHA1 of the commit (this is generic... and used for other pkgs)
-	#    - The first 10 lines of the root Makefile at that commit (cached lookup, same SHA1=same Makefile)
-	#      - This gives us the full version plus codename.
-	# - Get the u-boot patches hash. (could just hash the BOOTPATCHDIR non-disabled contents, or use Python patching proper?)
-	# - Hash of the relevant lib/ bash sources involved, say compilation/uboot*.sh etc
-	# All those produce a version string like:
-	# 2023.11-<4-digit-SHA1>_<4_digit_patches>
-
 	debug_var BOOTSOURCE
 	debug_var BOOTBRANCH
 	debug_var BOOTPATCHDIR
@@ -50,41 +38,14 @@ function artifact_uboot_prepare_version() {
 	declare short_sha1="${GIT_INFO_UBOOT[SHA1]:0:${short_hash_size}}"
 
 	# get the uboot patches hash...
-	# @TODO: why not just delegate this to the python patching, with some "dry-run" / hash-only option?
-	# @TODO: this is even more grave in case of u-boot: v2022.10 has patches for many boards inside, gotta resolve.
-	declare patches_hash="undetermined"
-	declare hash_files="undetermined"
-	declare -a uboot_patch_dirs=()
-	for patch_dir in ${BOOTPATCHDIR}; do
-		uboot_patch_dirs+=("${SRC}/patch/u-boot/${patch_dir}" "${USERPATCHES_PATH}/u-boot/${patch_dir}")
-	done
-
-	if [[ -n "${ATFSOURCE}" && "${ATFSOURCE}" != "none" ]]; then
-		uboot_patch_dirs+=("${SRC}/patch/atf/${ATFPATCHDIR}" "${USERPATCHES_PATH}/atf/${ATFPATCHDIR}")
-	fi
-
-	if [[ -n "${CRUSTCONFIG}" ]]; then
-		uboot_patch_dirs+=("${SRC}/patch/crust/${CRUSTPATCHDIR}" "${USERPATCHES_PATH}/crust/${CRUSTPATCHDIR}")
-	fi
-
-	calculate_hash_for_all_files_in_dirs "${uboot_patch_dirs[@]}"
-	patches_hash="${hash_files}"
+	declare patches_hash=$(get_uboot_patches_hash)
 	declare uboot_patches_hash_short="${patches_hash:0:${short_hash_size}}"
 
 	# Hash the extension hooks
-	declare -a extension_hooks_to_hash=(
-		"post_uboot_custom_postprocess" "fetch_custom_uboot" "build_custom_uboot"
-		"pre_config_uboot_target" "post_uboot_custom_postprocess" "post_uboot_custom_postprocess"
-		"post_config_uboot_target"
-	)
-	declare -a extension_hooks_hashed=("$(dump_extension_method_sources_functions "${extension_hooks_to_hash[@]}")")
-	declare hash_hooks="undetermined"
-	hash_hooks="$(echo "${extension_hooks_hashed[@]}" | sha256sum | cut -d' ' -f1)"
+	declare hash_hooks=$(get_extension_hooks_hash)
 
 	# Hash the old-timey hooks
-	declare hash_functions="undetermined"
-	calculate_hash_for_function_bodies "write_uboot_platform" "write_uboot_platform_mtd" "setup_write_uboot_platform"
-	declare hash_uboot_functions="${hash_functions}"
+	declare hash_uboot_functions=$(get_uboot_functions_hash)
 
 	# Hash those two together
 	declare hash_hooks_and_functions="undetermined"
@@ -92,22 +53,11 @@ function artifact_uboot_prepare_version() {
 	declare hash_hooks_and_functions_short="${hash_hooks_and_functions:0:${short_hash_size}}"
 
 	# Hash variables that affect the build and package of u-boot
-	declare -a vars_to_hash=(
-		"${BOOTDELAY}" "${UBOOT_DEBUGGING}" "${UBOOT_TARGET_MAP}" # general for all families
-		"${BOOT_SCENARIO}" "${BOOT_SUPPORT_SPI}" "${BOOT_SOC}"    # rockchip stuff, sorry.
-		"${DDR_BLOB}" "${BL31_BLOB}" "${MINILOADER_BLOB}"         # More rockchip stuff, even more sorry.
-		"${ATF_COMPILE}" "${ATFBRANCH}" "${ATFPATCHDIR}"          # arm-trusted-firmware stuff
-		"${CRUSTCONFIG}" "${CRUSTBRANCH}" "${CRUSTPATCHDIR}"      # crust stuff
-	)
-	declare hash_variables="undetermined" # will be set by calculate_hash_for_variables(), which normalizes the input
-	calculate_hash_for_variables "${vars_to_hash[@]}"
-	declare vars_config_hash="${hash_variables}"
+	declare vars_config_hash=$(get_vars_config_hash)
 	declare var_config_hash_short="${vars_config_hash:0:${short_hash_size}}"
 
 	# get the hashes of the lib/ bash sources involved...
-	declare hash_files="undetermined"
-	calculate_hash_for_bash_deb_artifact "${SRC}"/lib/functions/compilation/uboot*.sh # expansion
-	declare bash_hash="${hash_files}"
+	declare bash_hash=$(get_bash_hash)
 	declare bash_hash_short="${bash_hash:0:${short_hash_size}}"
 
 	# outer scope
@@ -131,6 +81,67 @@ function artifact_uboot_prepare_version() {
 	artifact_type="deb"
 
 	return 0
+}
+
+function get_uboot_patches_hash() {
+	declare patches_hash="undetermined"
+	declare hash_files="undetermined"
+	declare -a uboot_patch_dirs=()
+	for patch_dir in ${BOOTPATCHDIR}; do
+		uboot_patch_dirs+=("${SRC}/patch/u-boot/${patch_dir}" "${USERPATCHES_PATH}/u-boot/${patch_dir}")
+	done
+
+	if [[ -n "${ATFSOURCE}" && "${ATFSOURCE}" != "none" ]]; then
+		uboot_patch_dirs+=("${SRC}/patch/atf/${ATFPATCHDIR}" "${USERPATCHES_PATH}/atf/${ATFPATCHDIR}")
+	fi
+
+	if [[ -n "${CRUSTCONFIG}" ]]; then
+		uboot_patch_dirs+=("${SRC}/patch/crust/${CRUSTPATCHDIR}" "${USERPATCHES_PATH}/crust/${CRUSTPATCHDIR}")
+	fi
+
+	calculate_hash_for_all_files_in_dirs "${uboot_patch_dirs[@]}"
+	patches_hash="${hash_files}"
+	echo "${patches_hash}"
+}
+
+function get_extension_hooks_hash() {
+	declare -a extension_hooks_to_hash=(
+		"post_uboot_custom_postprocess" "fetch_custom_uboot" "build_custom_uboot"
+		"pre_config_uboot_target" "post_uboot_custom_postprocess" "post_uboot_custom_postprocess"
+		"post_config_uboot_target"
+	)
+	declare -a extension_hooks_hashed=("$(dump_extension_method_sources_functions "${extension_hooks_to_hash[@]}")")
+	declare hash_hooks="undetermined"
+	hash_hooks="$(echo "${extension_hooks_hashed[@]}" | sha256sum | cut -d' ' -f1)"
+	echo "${hash_hooks}"
+}
+
+function get_uboot_functions_hash() {
+	declare hash_functions="undetermined"
+	calculate_hash_for_function_bodies "write_uboot_platform" "write_uboot_platform_mtd" "setup_write_uboot_platform"
+	declare hash_uboot_functions="${hash_functions}"
+	echo "${hash_uboot_functions}"
+}
+
+function get_vars_config_hash() {
+	declare -a vars_to_hash=(
+		"${BOOTDELAY}" "${UBOOT_DEBUGGING}" "${UBOOT_TARGET_MAP}" # general for all families
+		"${BOOT_SCENARIO}" "${BOOT_SUPPORT_SPI}" "${BOOT_SOC}"    # rockchip stuff, sorry.
+		"${DDR_BLOB}" "${BL31_BLOB}" "${MINILOADER_BLOB}"         # More rockchip stuff, even more sorry.
+		"${ATF_COMPILE}" "${ATFBRANCH}" "${ATFPATCHDIR}"          # arm-trusted-firmware stuff
+		"${CRUSTCONFIG}" "${CRUSTBRANCH}" "${CRUSTPATCHDIR}"      # crust stuff
+	)
+	declare hash_variables="undetermined" # will be set by calculate_hash_for_variables(), which normalizes the input
+	calculate_hash_for_variables "${vars_to_hash[@]}"
+	declare vars_config_hash="${hash_variables}"
+	echo "${vars_config_hash}"
+}
+
+function get_bash_hash() {
+	declare hash_files="undetermined"
+	calculate_hash_for_bash_deb_artifact "${SRC}"/lib/functions/compilation/uboot*.sh # expansion
+	declare bash_hash="${hash_files}"
+	echo "${bash_hash}"
 }
 
 function artifact_uboot_build_from_sources() {
