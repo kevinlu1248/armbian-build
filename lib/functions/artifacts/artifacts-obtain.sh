@@ -56,13 +56,13 @@ function initialize_artifact() {
 	declare -g chosen_artifact="${1}"
 
 	# cant be empty, or have spaces nor commas
-	[[ "x${chosen_artifact}x" == "xx" ]] && exit_with_error "Artifact name is empty"
+	[[ -z "${chosen_artifact}" ]] && exit_with_error "Artifact name is empty"
 	[[ "${chosen_artifact}" == *" "* ]] && exit_with_error "Artifact name cannot contain spaces"
 	[[ "${chosen_artifact}" == *","* ]] && exit_with_error "Artifact name cannot contain commas"
-
+	
 	armbian_register_artifacts
 	declare -g chosen_artifact_impl="${ARMBIAN_ARTIFACTS_TO_HANDLERS_DICT["${chosen_artifact}"]}"
-	[[ "x${chosen_artifact_impl}x" == "xx" ]] && exit_with_error "Unknown artifact '${chosen_artifact}'"
+	[[ -z "${chosen_artifact_impl}" ]] && exit_with_error "Unknown artifact '${chosen_artifact}'"
 	display_alert "artifact" "${chosen_artifact} :: ${chosen_artifact_impl}()" "info"
 	create_artifact_functions
 }
@@ -93,10 +93,10 @@ function obtain_complete_artifact() {
 	debug_var artifact_version_reason
 
 	# sanity checks. artifact_version/artifact_version_reason/artifact_final_file *must* be set
-	[[ "x${artifact_name}x" == "xx" || "${artifact_name}" == "undetermined" ]] && exit_with_error "artifact_name is not set after artifact_prepare_version"
-	[[ "x${artifact_type}x" == "xx" || "${artifact_type}" == "undetermined" ]] && exit_with_error "artifact_type is not set after artifact_prepare_version"
-	[[ "x${artifact_version}x" == "xx" || "${artifact_version}" == "undetermined" ]] && exit_with_error "artifact_version is not set after artifact_prepare_version"
-	[[ "x${artifact_version_reason}x" == "xx" || "${artifact_version_reason}" == "undetermined" ]] && exit_with_error "artifact_version_reason is not set after artifact_prepare_version"
+	[[ -z "${artifact_name}" || "${artifact_name}" == "undetermined" ]] && exit_with_error "artifact_name is not set after artifact_prepare_version"
+	[[ -z "${artifact_type}" || "${artifact_type}" == "undetermined" ]] && exit_with_error "artifact_type is not set after artifact_prepare_version"
+	[[ -z "${artifact_version}" || "${artifact_version}" == "undetermined" ]] && exit_with_error "artifact_version is not set after artifact_prepare_version"
+	[[ -z "${artifact_version_reason}" || "${artifact_version_reason}" == "undetermined" ]] && exit_with_error "artifact_version_reason is not set after artifact_prepare_version"
 
 	declare -a artifact_map_debs_values=()
 	declare -a artifact_map_packages_values=()
@@ -175,8 +175,8 @@ function obtain_complete_artifact() {
 			;;
 		tar.zst)
 			# tar.zst (rootfs) must specify the directories directly, since we can't determine from deb info.
-			[[ "x${artifact_base_dir}x" == "xx" || "${artifact_base_dir}" == "undetermined" ]] && exit_with_error "artifact_base_dir is not set after artifact_prepare_version"
-			[[ "x${artifact_final_file}x" == "xx" || "${artifact_final_file}" == "undetermined" ]] && exit_with_error "artifact_final_file is not set after artifact_prepare_version"
+			[[ -z "${artifact_base_dir}" || "${artifact_base_dir}" == "undetermined" ]] && exit_with_error "artifact_base_dir is not set after artifact_prepare_version"
+			[[ -z "${artifact_final_file}" || "${artifact_final_file}" == "undetermined" ]] && exit_with_error "artifact_final_file is not set after artifact_prepare_version"
 			;;
 		*)
 			exit_with_error "artifact_type '${artifact_type}' is not supported"
