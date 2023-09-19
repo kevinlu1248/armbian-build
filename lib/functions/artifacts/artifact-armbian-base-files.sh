@@ -11,13 +11,27 @@
 # But the package is still named "base-files", this is similar to what Linux Mint does for the same purpose.
 
 function artifact_armbian-base-files_config_dump() {
+    if [[ -z "${RELEASE}" ]]; then
+        echo "Error: RELEASE is not set"
+        return 1
+    fi
+    if [[ -z "${ARCH}" ]]; then
+        echo "Error: ARCH is not set"
+        return 1
+    fi
 	artifact_input_variables[RELEASE]="${RELEASE}"
 	artifact_input_variables[ARCH]="${ARCH}"
 }
 
 function artifact_armbian-base-files_prepare_version() {
-	: "${RELEASE:?RELEASE is not set}"
-	: "${ARCH:?ARCH is not set}"
+    if [[ -z "${RELEASE}" ]]; then
+        echo "Error: RELEASE is not set"
+        return 1
+    fi
+    if [[ -z "${ARCH}" ]]; then
+        echo "Error: ARCH is not set"
+        return 1
+    fi
 
 	artifact_version="undetermined"        # outer scope
 	artifact_version_reason="undetermined" # outer scope
@@ -66,16 +80,35 @@ function artifact_armbian-base-files_prepare_version() {
 }
 
 function artifact_armbian-base-files_build_from_sources() {
-	LOG_SECTION="compile_armbian-base-files" do_with_logging compile_armbian-base-files
+    LOG_SECTION="compile_armbian-base-files" 
+    if ! do_with_logging compile_armbian-base-files; then
+        echo "Error: Failed to compile armbian-base-files"
+        return 1
+    fi
 }
 
 # Dont' wanna use a separate file for this. Keep it in here.
 function compile_armbian-base-files() {
-	: "${artifact_name:?artifact_name is not set}"
-	: "${artifact_version:?artifact_version is not set}"
-	: "${RELEASE:?RELEASE is not set}"
-	: "${ARCH:?ARCH is not set}"
-	: "${DISTRIBUTION:?DISTRIBUTION is not set}"
+    if [[ -z "${artifact_name}" ]]; then
+        echo "Error: artifact_name is not set"
+        return 1
+    fi
+    if [[ -z "${artifact_version}" ]]; then
+        echo "Error: artifact_version is not set"
+        return 1
+    fi
+    if [[ -z "${RELEASE}" ]]; then
+        echo "Error: RELEASE is not set"
+        return 1
+    fi
+    if [[ -z "${ARCH}" ]]; then
+        echo "Error: ARCH is not set"
+        return 1
+    fi
+    if [[ -z "${DISTRIBUTION}" ]]; then
+        echo "Error: DISTRIBUTION is not set"
+        return 1
+    fi
 
 	display_alert "Creating base-files for ${DISTRIBUTION} release '${RELEASE}' arch '${ARCH}'" "${artifact_name} :: ${artifact_version}" "info"
 
@@ -191,7 +224,10 @@ function reversion_armbian-base-files_deb_contents() {
 	declare orig_distro_release="${RELEASE}"
 
 	artifact_deb_reversion_unpack_data_deb
-	: "${data_dir:?data_dir is not set}"
+    if [[ -z "${data_dir}" ]]; then
+        echo "Error: data_dir is not set"
+        return 1
+    fi
 
 	# Change the PRETTY_NAME and add ARMBIAN_PRETTY_NAME in os-release, and change issue, issue.net
 	echo "ARMBIAN_PRETTY_NAME=\"${VENDOR} ${REVISION} ${orig_distro_release}\"" >> "${data_dir}"/etc/os-release
@@ -219,8 +255,14 @@ function artifact_armbian-base-files_cli_adapter_pre_run() {
 }
 
 function artifact_armbian-base-files_cli_adapter_config_prep() {
-	: "${RELEASE:?RELEASE is not set}"
-	: "${BOARD:?BOARD is not set}"
+    if [[ -z "${RELEASE}" ]]; then
+        echo "Error: RELEASE is not set"
+        return 1
+    fi
+    if [[ -z "${BOARD}" ]]; then
+        echo "Error: BOARD is not set"
+        return 1
+    fi
 
 	# there is no need for aggregation here, although RELEASE is required.
 	use_board="yes" allow_no_family="no" skip_kernel="no" prep_conf_main_minimal_ni < /dev/null # no stdin for this, so it bombs if tries to be interactive.
