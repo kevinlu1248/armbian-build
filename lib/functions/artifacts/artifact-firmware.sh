@@ -22,29 +22,29 @@ function artifact_firmware_prepare_version() {
 	debug_var ARMBIAN_FIRMWARE_SOURCE
 	debug_var ARMBIAN_FIRMWARE_BRANCH
 
-	declare short_hash_size=4
+	local short_hash_size=4
 
-	declare -A GIT_INFO_ARMBIAN_FIRMWARE=([GIT_SOURCE]="${ARMBIAN_FIRMWARE_SOURCE}" [GIT_REF]="${ARMBIAN_FIRMWARE_BRANCH}")
+	local -A GIT_INFO_ARMBIAN_FIRMWARE=([GIT_SOURCE]="${ARMBIAN_FIRMWARE_SOURCE}" [GIT_REF]="${ARMBIAN_FIRMWARE_BRANCH}")
 	run_memoized GIT_INFO_ARMBIAN_FIRMWARE "git2info" memoized_git_ref_to_info
 	debug_dict GIT_INFO_ARMBIAN_FIRMWARE
 
 	# Sanity check, the SHA1 gotta be sane.
-	[[ "${GIT_INFO_ARMBIAN_FIRMWARE[SHA1]}" =~ ^[0-9a-f]{40}$ ]] || exit_with_error "SHA1 is not sane: '${GIT_INFO_ARMBIAN_FIRMWARE[SHA1]}'"
+	[[ ${GIT_INFO_ARMBIAN_FIRMWARE[SHA1]} =~ ^[0-9a-f]{40}$ ]] || exit_with_error "SHA1 is not sane: '${GIT_INFO_ARMBIAN_FIRMWARE[SHA1]}'"
 
-	declare fake_unchanging_base_version="1"
+	local fake_unchanging_base_version="1"
 
-	declare short_sha1="${GIT_INFO_ARMBIAN_FIRMWARE[SHA1]:0:${short_hash_size}}"
+	local short_sha1="${GIT_INFO_ARMBIAN_FIRMWARE[SHA1]:0:short_hash_size}"
 
 	# get the hashes of the lib/ bash sources involved...
-	declare hash_files="undetermined"
+	local hash_files="undetermined"
 	calculate_hash_for_bash_deb_artifact "compilation/packages/firmware-deb.sh"
-	declare bash_hash="${hash_files}"
-	declare bash_hash_short="${bash_hash:0:${short_hash_size}}"
+	local bash_hash="${hash_files}"
+	local bash_hash_short="${bash_hash:0:short_hash_size}"
 
 	# outer scope
 	artifact_version="${fake_unchanging_base_version}-SA${short_sha1}-B${bash_hash_short}"
 
-	declare -a reasons=(
+	local -a reasons=(
 		"Armbian firmware git revision \"${GIT_INFO_ARMBIAN_FIRMWARE[SHA1]}\""
 		"framework bash hash \"${bash_hash}\""
 	)
