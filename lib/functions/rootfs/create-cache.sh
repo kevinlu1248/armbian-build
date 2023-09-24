@@ -13,8 +13,8 @@ function calculate_rootfs_cache_id() {
 	[[ -z "${AGGREGATED_ROOTFS_HASH}" ]] && exit_with_error "AGGREGATED_ROOTFS_HASH is not set at calculate_rootfs_cache_id()"
 
 	# If the vars are already set and not empty, exit_with_error
-	[[ "x${packages_hash}x" != "xx" ]] && exit_with_error "packages_hash is already set"
-	[[ "x${cache_type}x" != "xx" ]] && exit_with_error "cache_type is already set"
+	[[ -n "${packages_hash}" ]] && exit_with_error "packages_hash is already set"
+	[[ -n "${cache_type}" ]] && exit_with_error "cache_type is already set"
 
 	declare -i short_hash_size=6
 
@@ -102,7 +102,7 @@ function extract_rootfs_artifact() {
 	fi
 
 	# validate sanity
-	[[ "x${SDCARD}x" == "xx" ]] && exit_with_error "get_or_create_rootfs_cache_chroot_sdcard: extract: SDCARD: ${SDCARD} is not set"
+	[[ -z "${SDCARD}" ]] && exit_with_error "get_or_create_rootfs_cache_chroot_sdcard: extract: SDCARD: ${SDCARD} is not set"
 	[[ ! -d "${SDCARD}" ]] && exit_with_error "get_or_create_rootfs_cache_chroot_sdcard: ${SDCARD} is not a directory"
 
 	# @TODO: validate SDCARD is empty; if not, the artifact build "leaked" a cleanup
