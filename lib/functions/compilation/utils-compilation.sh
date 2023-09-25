@@ -75,14 +75,14 @@ find_toolchain() {
 		gcc_ver_simple="$("${gcc_bin}" -dumpversion 2>&1 || true)" # this might fail: toolchain can't run on current host
 
 		display_alert "Checking version" "'${gcc_ver_simple}' for '${gcc_bin}'" "debug"
-		if [[ "x${gcc_ver_simple}x" == "xx" ]]; then
+		if [[ "${gcc_ver_simple}" == "" ]]; then
 			display_alert "Can't obtain version" "'${gcc_bin}' for '${gcc_bin}': '${gcc_ver_simple}'" "debug"
 			continue
 		fi
-
+		
 		declare gcc_ver
 		gcc_ver="$(echo "${gcc_ver_simple}" | grep -oE "^[[:digit:]]+\.[[:digit:]]" || true)" # this might fail to parse
-		if [[ "x${gcc_ver}x" == "xx" ]]; then
+		if [[ "${gcc_ver}" == "" ]]; then
 			display_alert "Can't parse version" "'${gcc_bin}' for '${gcc_bin}': '${gcc_ver_simple}': '${gcc_ver}'" "debug"
 			continue
 		fi
