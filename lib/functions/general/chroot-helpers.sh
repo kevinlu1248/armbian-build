@@ -9,7 +9,7 @@
 
 # mount_chroot <target>
 function mount_chroot() {
-	if [[ "x${LOG_SECTION}x" == "xx" ]]; then
+	if [[ "${LOG_SECTION}" == "" ]]; then
 		display_alert "mount_chroot called outside of logging section..." "mount_chroot '$1'\n$(stack_color="${magenta_color:-}" show_caller_full)" "warn"
 	fi
 
@@ -30,7 +30,7 @@ function mount_chroot() {
 
 # umount_chroot <target>
 function umount_chroot() {
-	if [[ "x${LOG_SECTION}x" == "xx" ]]; then
+	if [[ "${LOG_SECTION}" == "" ]]; then
 		display_alert "umount_chroot called outside of logging section..." "umount_chroot '$1'\n$(stack_color="${magenta_color:-}" show_caller_full)" "warn"
 	fi
 	local target
