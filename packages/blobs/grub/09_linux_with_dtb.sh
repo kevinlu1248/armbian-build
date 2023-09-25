@@ -40,7 +40,7 @@ export TEXTDOMAINDIR="${datarootdir}/locale"
 CLASS="--class gnu-linux --class gnu --class os"
 SUPPORTED_INITS="sysvinit:/lib/sysvinit/init systemd:/lib/systemd/systemd upstart:/sbin/upstart"
 
-if [ "x${GRUB_DISTRIBUTOR}" = "x" ]; then
+if [ "${GRUB_DISTRIBUTOR}" = "" ]; then
 	OS=GNU/Linux
 else
 	case ${GRUB_DISTRIBUTOR} in
@@ -73,29 +73,29 @@ GRUB_DISABLE_LINUX_PARTUUID=${GRUB_DISABLE_LINUX_PARTUUID-true}
 
 # btrfs may reside on multiple devices. We cannot pass them as value of root= parameter
 # and mounting btrfs requires user space scanning, so force UUID in this case.
-if ([ "x${GRUB_DEVICE_UUID}" = "x" ] && [ "x${GRUB_DEVICE_PARTUUID}" = "x" ]) ||
-	([ "x${GRUB_DISABLE_LINUX_UUID}" = "xtrue" ] &&
-		[ "x${GRUB_DISABLE_LINUX_PARTUUID}" = "xtrue" ]) ||
+if ([ "${GRUB_DEVICE_UUID}" = "" ] && [ "${GRUB_DEVICE_PARTUUID}" = "" ]) ||
+	([ "${GRUB_DISABLE_LINUX_UUID}" = "true" ] &&
+		[ "${GRUB_DISABLE_LINUX_PARTUUID}" = "true" ]) ||
 	(! test -e "/dev/disk/by-uuid/${GRUB_DEVICE_UUID}" &&
 		! test -e "/dev/disk/by-partuuid/${GRUB_DEVICE_PARTUUID}") ||
 	(test -e "${GRUB_DEVICE}" && uses_abstraction "${GRUB_DEVICE}" lvm); then
 	LINUX_ROOT_DEVICE=${GRUB_DEVICE}
-elif [ "x${GRUB_DEVICE_UUID}" = "x" ] ||
-	[ "x${GRUB_DISABLE_LINUX_UUID}" = "xtrue" ]; then
+elif [ "${GRUB_DEVICE_UUID}" = "" ] ||
+	[ "${GRUB_DISABLE_LINUX_UUID}" = "true" ]; then
 	LINUX_ROOT_DEVICE=PARTUUID=${GRUB_DEVICE_PARTUUID}
 else
 	LINUX_ROOT_DEVICE=UUID=${GRUB_DEVICE_UUID}
 fi
 
-case x"$GRUB_FS" in
-	xbtrfs)
+case "$GRUB_FS" in
+	btrfs)
 		rootsubvol="$(make_system_path_relative_to_its_root /)"
 		rootsubvol="${rootsubvol#/}"
-		if [ "x${rootsubvol}" != x ]; then
+		if [ "${rootsubvol}" != "" ]; then
 			GRUB_CMDLINE_LINUX="rootflags=subvol=${rootsubvol} ${GRUB_CMDLINE_LINUX}"
 		fi
 		;;
-	xzfs)
+	zfs)
 		rpool=$(${grub_probe} --device ${GRUB_DEVICE} --target=fs_label 2> /dev/null || true)
 		bootfs="$(make_system_path_relative_to_its_root / | sed -e "s,@$,,")"
 		LINUX_ROOT_DEVICE="ZFS=${rpool}${bootfs%/}"
