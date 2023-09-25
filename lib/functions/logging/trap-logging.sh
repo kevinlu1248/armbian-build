@@ -9,8 +9,8 @@
 
 # Cleanup for logging.
 function trap_handler_cleanup_logging() {
-	[[ "x${LOGDIR}x" == "xx" ]] && return 0
-	[[ "x${LOGDIR}x" == "x/x" ]] && return 0
+	[[ "${LOGDIR}" == "" ]] && return 0
+	[[ "${LOGDIR}" == "/" ]] && return 0
 	[[ ! -d "${LOGDIR}" ]] && return 0
 
 	display_alert "Cleaning up log files" "LOGDIR: '${LOGDIR}'" "debug"
