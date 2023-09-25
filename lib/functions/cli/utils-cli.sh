@@ -33,7 +33,7 @@ function parse_cmdline_params() {
 			else
 				exit_with_error "Invalid cmdline param '${param_name}=${param_value_desc}'"
 			fi
-		elif [[ "x${arg}x" != "xx" ]]; then # not a param, not empty, store it in the non-param array for later usage
+		elif [[ -n "${arg}" ]]; then # not a param, not empty, store it in the non-param array for later usage
 			local non_param_value="${arg}"
 			local non_param_value_desc="${non_param_value:-(empty)}"
 			display_alert "Command line: storing non-param argument" "${non_param_value_desc}" "debug"
@@ -82,7 +82,7 @@ function armbian_prepare_cli_command_to_run() {
 	# @TODO: actually set the vars...
 
 	local set_vars_for_command=""
-	if [[ "x${ARMBIAN_COMMAND_VARS}x" != "xx" ]]; then
+	if [[ -n "${ARMBIAN_COMMAND_VARS}" ]]; then
 		# Loop over them, expanding...
 		for var_piece in ${ARMBIAN_COMMAND_VARS}; do
 			local var_decl="declare -g ${var_piece};"
