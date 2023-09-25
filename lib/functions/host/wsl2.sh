@@ -26,8 +26,8 @@ function check_windows_wsl2() {
 }
 
 function wsl2_pester_user_for_terminal() {
-	[[ "x${SSH_CLIENT}x" != "xx" ]] && return 0 # not if being accessed over SSH
-	[[ "x${WT_SESSION}x" != "xx" ]] && return 0 # WT_SESSION from Windows Terminal # From info in https://stackoverflow.com/questions/59733731/how-to-detect-if-running-in-the-new-windows-terminal
+	[[ "${SSH_CLIENT}" != "" ]] && return 0 # not if being accessed over SSH
+	[[ "${WT_SESSION}" != "" ]] && return 0 # WT_SESSION from Windows Terminal # From info in https://stackoverflow.com/questions/59733731/how-to-detect-if-running-in-the-new-windows-terminal
 
 	if [[ "${PESTER_TERMINAL}" != "no" ]]; then # Or, send a PR with detection code for your favorite Windows UTF-8 capable terminal.
 		display_alert "Please use a terminal that supports UTF-8. For example:" "Windows Terminal" "warn"
